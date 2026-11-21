@@ -499,7 +499,8 @@ function timelineSteps(deal) {
 function Tracker() {
   const { id } = useParams();
   const { state, verifyReceipt, confirmDelivery } = useStore();
-  const deal = state.deals.find((item) => item.id === id);
+  const numericDeal = /^\d+$/.test(id) ? state.deals[Number(id) - 1] : null;
+  const deal = state.deals.find((item) => item.id === id) || numericDeal;
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);

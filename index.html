@@ -14,6 +14,35 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.setTimeout(async () => {
+        const root = document.getElementById("root");
+        if (!root || root.childElementCount > 0) return;
+
+        const message = document.createElement("main");
+        message.setAttribute("role", "alert");
+        message.style.cssText = "max-width:448px;margin:15vh auto;padding:24px;font-family:sans-serif";
+        const heading = document.createElement("h1");
+        heading.textContent = "SurePay is taking longer than expected";
+        const detail = document.createElement("p");
+        detail.textContent = "The app did not finish loading. Reload this page to try again.";
+        message.append(heading, detail);
+        root.replaceChildren(message);
+
+        try {
+          if ("serviceWorker" in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+          }
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((key) => caches.delete(key)));
+          }
+        } catch (error) {
+          console.error("SurePay could not clear stale offline data.", error);
+        }
+      }, 2000);
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
