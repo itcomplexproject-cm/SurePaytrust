@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary-fixed": "#ffdcc3", "on-primary": "#ffffff", "tertiary-container": "#616980", "secondary": "#904d00", "outline-variant": "#bdc9c1", "on-tertiary-container": "#e4e9ff", "outline": "#6e7a73", "on-background": "#0b1c30", "error-container": "#ffdad6", "error": "#ba1a1a", "secondary-container": "#fe932c", "on-surface": "#0b1c30", "surface-container-high": "#dce9ff", "tertiary": "#495167", "surface-dim": "#cbdbf5", "on-surface-variant": "#3e4943", "primary": "#005d42", "surface-container": "#e5eeff", "inverse-primary": "#7bd8b1", "surface-container-low": "#eff4ff", "on-tertiary": "#ffffff", "inverse-on-surface": "#eaf1ff", "secondary-fixed-dim": "#ffb77d", "on-error": "#ffffff", "on-primary-fixed": "#002115", "background": "#f8f9ff", "tertiary-fixed-dim": "#bec6e0", "surface-container-lowest": "#ffffff", "primary-fixed": "#97f5cc", "inverse-surface": "#213145", "on-primary-container": "#9ffdd3", "surface-tint": "#006c4e", "on-error-container": "#93000a", "on-secondary": "#ffffff", "primary-fixed-dim": "#7bd8b1", "on-secondary-fixed": "#2f1500", "on-tertiary-fixed-variant": "#3f465c", "on-tertiary-fixed": "#131b2e", "surface-bright": "#f8f9ff", "primary-container": "#047857", "on-secondary-fixed-variant": "#6e3900", "on-secondary-container": "#663500", "on-primary-fixed-variant": "#00513a", "tertiary-fixed": "#dae2fd", "surface": "#f8f9ff", "surface-variant": "#d3e4fe", "surface-container-highest": "#d3e4fe" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-sm": "0.5rem", "space-xl": "2rem", "margin": "1rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "space-md": "1rem", "gutter": "1rem" }, "fontFamily": { "headline-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "currency-display-mobile": ["Plus Jakarta Sans"], "currency-display": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"] }, "fontSize": { "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "currency-display-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "currency-display": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } }</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-space-xs flex items-center justify-between gap-space-xs"><button aria-label="Go Back" class="w-11 h-11 flex items-center justify-center text-on-surface hover:text-primary transition-colors" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><div class="flex items-center gap-space-sm flex-1 min-w-0 pr-space-xs"><div class="relative flex-shrink-0"><div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-on-primary text-[20px]">gavel</span></div><span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary flex items-center justify-center ring-2 ring-surface"><span class="material-symbols-outlined text-on-primary text-[9px]">verified</span></span></div><div class="flex flex-col min-w-0 flex-1 justify-center"><div class="flex items-center gap-1.5 min-w-0"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate leading-tight">Mediation Chat</h1><span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm flex-shrink-0"><span class="material-symbols-outlined text-[11px]">shield</span><span>CNI</span></span></div><div class="flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md truncate mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span><span class="truncate">Buyer, Seller, SurePay Arbitrator (3)</span></div></div></div><div class="flex items-center gap-1 flex-shrink-0"><button aria-label="Case Info &amp; Audit" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">info</span></button><button aria-label="Escrow Actions" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">more_vert</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-0.5 flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full pb-28">
+<!-- Pinned Escrow Case Status Banner -->
+<div class="w-full bg-surface-container-low px-space-md py-space-sm shadow-sm sticky top-16 z-30">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-7 h-7 rounded-full bg-secondary-container/20 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-secondary text-[16px]" style="font-variation-settings: 'FILL' 1;">lock</span>
+</span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-bold truncate">Case #DSP-4091</span>
+<span class="px-1.5 py-0.2 rounded-full bg-error-container text-on-error-container font-label-sm text-[9px] uppercase tracking-wide">Frozen</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Damaged Lens Discrepancy • iPhone 13 Pro</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0">
+<span class="font-currency-display-mobile text-[16px] leading-tight text-primary font-extrabold tracking-tight">380,000 FCFA</span>
+<span class="inline-flex items-center gap-0.5 font-label-sm text-[10px] text-tertiary">
+<span class="material-symbols-outlined text-[11px] text-primary">account_balance</span>
+            BEAC Vault Locked
+          </span>
+</div>
+</div>
+<!-- Quick collapsible Waybill Details Bar -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary">local_shipping</span>
+<span class="font-label-md text-label-md text-on-surface-variant truncate">
+            Amour Mezam: <span class="font-semibold text-on-surface">#AM-BDA-94028</span> (Mboppi Depot)
+          </span>
+</div>
+<button class="flex items-center gap-0.5 px-2 py-1 rounded-full bg-surface-container-high text-primary hover:bg-primary/10 transition-colors font-label-sm text-label-sm" id="toggleWaybillBtn" onclick="toggleWaybillDrawer()" type="button">
+<span>Inspection Proof</span>
+<span class="material-symbols-outlined text-[14px] transition-transform duration-200" id="waybillChevron">expand_more</span>
+</button>
+</div>
+<!-- Expandable Waybill Inspection Proof Drawer -->
+<div class="hidden flex-col gap-2 pt-2 transition-all" id="waybillDrawer">
+<div class="grid grid-cols-2 gap-2">
+<div class="relative rounded-lg overflow-hidden bg-surface-container shadow-sm aspect-video flex flex-col justify-end p-2">
+<img class="absolute inset-0 w-full h-full object-cover" data-alt="High resolution detailed macro photo showing a cracked sapphire camera lens on an iPhone 13 Pro graphite edition resting on a logistics agency wooden counter in Cameroon, inspection label visible." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD55w_IL4PJXZNpnkZJh2lwPLFdxCk3ebQcwWKu-44GScim8faGcqkv2KK3HbIiiMk8JE98f4DEubK7CHFY9GHhIYxD3YeHGVk1bYsuWudbvgAsvUb1PpYNIVyIb4ZjV3ZQn7JwjIY14IG-QeswEHseaJtpLc-qdOJvuKtN8pojhtMrRvlOMAODbCFSBlooaBiNkNIEH4taKMJ3ph1_fYuONBtOJEYfn_AImn28uHJn"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent"></div>
+<span class="relative z-10 font-label-sm text-white font-medium drop-shadow-sm">Amour Mezam Mboppi Desk</span>
+</div>
+<div class="relative rounded-lg overflow-hidden bg-surface-container shadow-sm aspect-video flex flex-col justify-end p-2">
+<img class="absolute inset-0 w-full h-full object-cover" data-alt="Official transport consignment waybill slip of Amour Mezam Express Bamenda with ink stamp, tracking code AM-BDA-94028, and manual agent notation indicating received with unboxing inspection remark." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAT8FjcmmuNeXkd-GyVr8eFxb9PETcHhVdRkJga3pdrdZcRDinEz0_hg3GujruypkCpcYvBAc2kAPH_JUkfvEfEV-sLQaXt5h-3wM5u74MAdz0npyKWdGdFTz99H6a421haP4L4hdU1bjMEsD0TUKotHbktIkQgVTPwwGigW_rHb2CM3Oem3vzTrpbp7W5imBsuGZvHSQo72Y0r5NSom-eyat5PxkxbfmDOZmoHIb30"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-background/80 via-transparent to-transparent"></div>
+<span class="relative z-10 font-label-sm text-white font-medium drop-shadow-sm">Agent Remark Slip</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant text-[11px] px-1">
+<span>Handoff: Up Station Bamenda</span>
+<span class="font-medium text-primary">Inspected with Agent Jean</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Chat Content Stream with WhatsApp Style & SurePay Design System -->
+<div class="flex flex-col px-space-md py-space-md gap-3 w-full max-w-xl mx-auto">
+<!-- Day Separator -->
+<div class="flex justify-center my-1">
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-[11px] shadow-sm">
+        Today, 24 October 2024
+      </span>
+</div>
+<!-- BEAC System Security Notice -->
+<div class="flex justify-center w-full">
+<div class="max-w-[92%] bg-secondary-fixed/50 rounded-xl p-2.5 shadow-sm text-center flex flex-col items-center gap-1">
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-label-sm text-[11px] font-bold tracking-wide uppercase">BEAC Legal Escrow Enclave</span>
+</div>
+<p class="font-body-sm text-[11px] leading-tight text-on-secondary-fixed-variant">
+          SurePay Secure Mediation Session Initiated. Messages in this session are cryptographically signed and archived for regulatory compliance under CEMAC electronic commerce directive. Case #DSP-4091.
+        </p>
+</div>
+</div>
+<!-- 1. Arbitrator Message (Left-aligned, Distinct Slate/Emerald Styling) -->
+<div class="flex items-start gap-2 max-w-[88%] mr-auto">
+<div class="relative w-8 h-8 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-white text-[16px]">gavel</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[8px]">check</span>
+</span>
+</div>
+<div class="flex flex-col">
+<div class="bg-surface-container-lowest rounded-2xl rounded-tl-sm p-3 shadow-sm flex flex-col gap-1">
+<div class="flex items-center justify-between gap-2 pb-0.5">
+<span class="font-label-md text-label-md text-primary font-bold">Me. Sandrine Ebongue</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-[9px] font-semibold">Official Arbitrator</span>
+</div>
+<p class="font-body-md text-on-surface text-[13px] leading-snug">
+            Hello Emmanuel and Mr. Fru. I am Me. Sandrine Ebongue, designated SurePay arbitrator (Douala Bar). <span class="font-bold text-primary">380,000 FCFA</span> remains safely frozen in the escrow vault. Emmanuel has flagged that the telephoto camera sapphire glass arrived cracked upon unboxing at Amour Mezam Mboppi depot. Let us examine the inspection proof.
+          </p>
+<div class="flex items-center justify-end gap-1 pt-1 text-on-surface-variant font-label-sm text-[10px]">
+<span>14:33</span>
+<span class="material-symbols-outlined text-primary text-[13px]">done_all</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. Buyer Message (Right-aligned, You, Emerald tint) with Photo Proof Attachment -->
+<div class="flex items-start gap-2 max-w-[88%] ml-auto justify-end">
+<div class="flex flex-col items-end">
+<div class="bg-surface-container-high rounded-2xl rounded-tr-sm p-3 shadow-sm flex flex-col gap-2">
+<div class="flex items-center justify-between gap-3 pb-0.5">
+<span class="font-label-md text-label-md text-primary font-bold">Emmanuel T. (You)</span>
+<span class="font-label-sm text-[10px] text-on-surface-variant">Buyer</span>
+</div>
+<p class="font-body-md text-on-surface text-[13px] leading-snug">
+            Good afternoon Ma'am. I inspected the package directly at the Mboppi counter in presence of the agency agent Jean. The lens has a distinct crack and scratches. Here is the counter photo and the signed agent remark slip.
+          </p>
+<!-- Media Preview Card -->
+<div class="rounded-xl overflow-hidden bg-surface-container-lowest p-2 flex flex-col gap-1.5 shadow-sm">
+<div class="relative w-full h-36 rounded-lg overflow-hidden bg-surface-dim">
+<img class="w-full h-full object-cover" data-alt="A smartphone camera lens module with a visible diagonal fracture on the top telephoto lens, taken on an official wooden express parcel agency counter with agency receipt in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLHVezmaAyyj1_wBVBi4kWFY4tQRcPsMIdegf80bArUlBktwbeLa17jE0pY_B5WCfmTb568QUhP1CPXBXpPG_wd-ohD45kktdkQJmoxa9Hn31BsVp3V90M0yQubd44Mk0gZ7uBNmcZIdzpx2PQpkDn3fsnh9mjiLRjJr1VEQ7MDMB2ZY4qqRvur5G_1Ayl_184ZC09GiFfZO0j6bz70pGDRqo22aYy6jn5pQgnVYh6"/>
+<div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-on-background/70 backdrop-blur-md text-white font-label-sm text-[10px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">photo_camera</span>
+                Amour Mezam Depot Desk
+              </div>
+</div>
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-primary text-[18px]">image</span>
+<span class="font-label-md text-label-md text-on-surface truncate">damaged_lens_mboppi.jpg</span>
+</div>
+<span class="font-label-sm text-on-surface-variant text-[10px]">2.4 MB</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-1 pt-0.5 text-on-surface-variant font-label-sm text-[10px]">
+<span>14:35</span>
+<span class="material-symbols-outlined text-primary text-[13px]">done_all</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Seller Message (Left-aligned, Secondary Ochre Tone) -->
+<div class="flex items-start gap-2 max-w-[88%] mr-auto">
+<div class="relative w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[16px]">storefront</span>
+</div>
+<div class="flex flex-col">
+<div class="bg-surface-container-lowest rounded-2xl rounded-tl-sm p-3 shadow-sm flex flex-col gap-1">
+<div class="flex items-center justify-between gap-2 pb-0.5">
+<div class="flex items-center gap-1 min-w-0">
+<span class="font-label-md text-label-md text-secondary font-bold truncate">Fru Kevin Tech</span>
+<span class="material-symbols-outlined text-primary text-[13px]" title="CNI Verified Merchant">verified</span>
+</div>
+<span class="px-1.5 py-0.2 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-[9px] font-semibold flex-shrink-0">Bamenda Hub</span>
+</div>
+<p class="font-body-md text-on-surface text-[13px] leading-snug">
+            Hello Me. Sandrine and Emmanuel. In Bamenda before handoff to Amour Mezam Up Station, the phone was flawless and in bubblewrap. Perhaps transit vibration or rough handling caused it. Can we do a partial refund of <span class="font-bold text-on-surface">45,000 FCFA</span> so Emmanuel can replace the sapphire lens in Douala Akwa?
+          </p>
+<div class="flex items-center justify-end gap-1 pt-1 text-on-surface-variant font-label-sm text-[10px]">
+<span>14:38</span>
+<span class="material-symbols-outlined text-primary text-[13px]">done_all</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. Arbitrator Mediation Proposal Card (Embedded Resolution Milestone Card) -->
+<div class="w-full flex justify-center my-1">
+<div class="w-full bg-surface-container-lowest rounded-2xl p-3.5 shadow-md flex flex-col gap-3">
+<div class="flex items-center justify-between pb-2">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-white text-[16px]">balance</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-extrabold leading-tight">Official Resolution Terms</span>
+<span class="font-label-sm text-[10px] text-primary">Issued by Me. Sandrine Ebongue • 14:41</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-bold">Binding Order</span>
+</div>
+<!-- Settlement Options Comparison Grid -->
+<div class="flex flex-col gap-2">
+<!-- Option A (Recommended) -->
+<div class="cursor-pointer rounded-xl p-3 transition-all bg-surface-container-high/60" id="optionCardA" onclick="selectOption('A')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0" id="radioA">
+<span class="material-symbols-outlined text-white text-[14px]">check</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-bold">Option A: Repair Settlement</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-container text-white font-label-sm text-[9px]">Recommended</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant mt-0.5 leading-snug">
+                    Seller grants <span class="font-semibold text-primary">45,000 FCFA</span> repair credit directly to Emmanuel's MTN MoMo. Balance of <span class="font-semibold text-on-surface">335,000 FCFA</span> released to Seller immediately.
+                  </p>
+</div>
+</div>
+</div>
+<div class="mt-2.5 flex items-center gap-3 pt-2 text-[11px] text-on-surface-variant font-label-sm">
+<span class="inline-flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                Refund: MTN MoMo (+237 677•••821)
+              </span>
+<span class="inline-flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                Settlement Instant
+              </span>
+</div>
+</div>
+<!-- Option B (Return) -->
+<div class="cursor-pointer rounded-xl p-3 transition-all bg-surface-container-lowest" id="optionCardB" onclick="selectOption('B')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0" id="radioB">
+<span class="material-symbols-outlined text-transparent text-[14px]">check</span>
+</div>
+<div>
+<span class="font-label-md text-label-md text-on-surface font-bold">Option B: Full Return &amp; 100% Refund</span>
+<p class="font-body-sm text-[12px] text-on-surface-variant mt-0.5 leading-snug">
+                    Parcel dispatched back to Bamenda via Amour Mezam Express. Full escrow of <span class="font-semibold text-on-surface">380,000 FCFA</span> returned to Buyer once seller inspects return.
+                  </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Pill Buttons inside the mediation card -->
+<div class="flex flex-col sm:flex-row gap-2 pt-1">
+<button class="flex-1 h-12 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-transform" id="btnAcceptSettlement" onclick="triggerAcceptance()" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Accept 45,000 FCFA Settlement</span>
+</button>
+<button class="h-12 px-4 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center justify-center gap-1 active:scale-[0.98] transition-transform" onclick="triggerRejection()" type="button">
+<span class="material-symbols-outlined text-error text-[18px]">undo</span>
+<span>Demand Return</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Dynamic Status Notification / Confirmation Banner (Hidden by default, triggered on action) -->
+<div class="hidden w-full bg-primary-fixed/80 rounded-xl p-3 shadow-sm text-center flex-col items-center gap-1 animate-fade-in" id="agreementSuccessBanner">
+<div class="flex items-center gap-1.5 text-on-primary-fixed font-bold">
+<span class="material-symbols-outlined text-[18px] text-primary">task_alt</span>
+<span class="font-label-md text-label-md">Joint Agreement Signed by Buyer</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-primary-fixed-variant">
+        Notifying Me. Sandrine Ebongue and Fru Kevin Tech. 45,000 FCFA is ready for instant MTN MoMo automated payout.
+      </p>
+</div>
+</div>
+<!-- Bottom Floating Interactive Dock & WhatsApp Input Bar -->
+<div class="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-xl shadow-lg flex flex-col pb-safe">
+<!-- Quick Settlement Action Helper Bar -->
+<div class="px-space-md py-2 bg-surface-container flex items-center justify-between gap-2 overflow-x-auto">
+<button class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest text-primary text-[12px] font-label-md shadow-sm active:scale-95 transition-transform" onclick="insertQuickMessage('I agree to the 45,000 FCFA compensation. Please execute the payout.')" type="button">
+<span class="material-symbols-outlined text-[15px] text-primary">price_check</span>
+<span>Accept 45k FCFA Settlement</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant text-[12px] font-label-md shadow-sm active:scale-95 transition-transform" onclick="insertQuickMessage('Can we expedite the Amour Mezam return slip?')" type="button">
+<span class="material-symbols-outlined text-[15px]">assignment_return</span>
+<span>Return Inquiries</span>
+</button>
+<button class="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-white text-[12px] font-label-md shadow-sm active:scale-95 transition-transform" onclick="triggerSignModal()" type="button">
+<span class="material-symbols-outlined text-[15px]">edit_document</span>
+<span>Sign Agreement</span>
+</button>
+</div>
+<!-- WhatsApp Style Message Input Container -->
+<div class="h-16 px-space-sm flex items-center gap-2">
+<!-- Emoji Trigger -->
+<button aria-label="Emoji Picker" class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[24px]">mood</span>
+</button>
+<!-- Attachment Button (Depot Slip / Photo) -->
+<button aria-label="Attach File or Inspection Media" class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" onclick="simulateMediaUpload()" type="button">
+<span class="material-symbols-outlined text-[24px]">attach_file</span>
+</button>
+<!-- Text Input Field -->
+<div class="flex-1 h-11 bg-surface-container-lowest rounded-full px-4 flex items-center shadow-inner">
+<input class="w-full bg-transparent border-0 outline-none text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant/60" id="chatInputField" placeholder="Type a message as Emmanuel T...." type="text"/>
+</div>
+<!-- Voice Note / Send Button -->
+<button aria-label="Send or Voice Note" class="w-11 h-11 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-md active:scale-95 transition-transform flex-shrink-0" id="sendBtn" onclick="handleSendMessage()" type="button">
+<span class="material-symbols-outlined text-[20px]" id="sendIcon">mic</span>
+</button>
+</div>
+</div>
+<!-- Sign Joint Agreement Bottom Sheet Modal -->
+<div class="hidden fixed inset-0 z-50 bg-on-background/40 backdrop-blur-xs flex flex-col justify-end" id="signModal">
+<div class="w-full bg-surface-container-lowest rounded-t-3xl p-space-md shadow-2xl flex flex-col gap-3 max-h-[751px] overflow-y-auto pb-safe">
+<div class="w-12 h-1.5 rounded-full bg-surface-container-highest mx-auto"></div>
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Sign Settlement Deal</h3>
+<span class="font-label-sm text-[11px] text-tertiary">SurePay BEAC Escrow Binding Protocol</span>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant" onclick="triggerSignModal()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Transaction Recap Box -->
+<div class="rounded-xl bg-surface-container p-3 flex flex-col gap-2">
+<div class="flex justify-between text-body-sm">
+<span class="text-on-surface-variant">Original Vault Deposit:</span>
+<span class="font-semibold text-on-surface">380,000 FCFA</span>
+</div>
+<div class="flex justify-between text-body-sm">
+<span class="text-on-surface-variant">Repair Allowance to Buyer:</span>
+<span class="font-bold text-primary">+45,000 FCFA (MTN MoMo)</span>
+</div>
+<div class="flex justify-between text-body-sm">
+<span class="text-on-surface-variant">Final Seller Remittance:</span>
+<span class="font-semibold text-on-surface">335,000 FCFA</span>
+</div>
+<div class="flex justify-between text-[11px] text-tertiary pt-1">
+<span>Target Recipient:</span>
+<span>+237 677 42 18 21 (Emmanuel T.)</span>
+</div>
+</div>
+<div class="flex items-center gap-2 p-2 rounded-lg bg-secondary-fixed/30 text-on-secondary-fixed-variant text-[11px]">
+<span class="material-symbols-outlined text-secondary text-[16px]">info</span>
+<span>By tapping below, your biometric/CNI token is applied to this mutual release contract.</span>
+</div>
+<div class="flex gap-2 pt-2">
+<button class="w-full h-13 py-3 rounded-xl bg-primary text-white font-label-lg text-label-lg font-bold shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2" onclick="confirmJointSettlement()" type="button">
+<span class="material-symbols-outlined text-[20px]">fingerprint</span>
+<span>Authorize &amp; Receive 45,000 FCFA</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let selectedOption = 'A';
+
+  function toggleWaybillDrawer() {
+    const drawer = document.getElementById('waybillDrawer');
+    const chevron = document.getElementById('waybillChevron');
+    if (drawer.classList.contains('hidden')) {
+      drawer.classList.remove('hidden');
+      drawer.classList.add('flex');
+      chevron.style.transform = 'rotate(180deg)';
+    } else {
+      drawer.classList.add('hidden');
+      drawer.classList.remove('flex');
+      chevron.style.transform = 'rotate(0deg)';
+    }
+  }
+
+  function selectOption(opt) {
+    selectedOption = opt;
+    const cardA = document.getElementById('optionCardA');
+    const cardB = document.getElementById('optionCardB');
+    const radioA = document.getElementById('radioA');
+    const radioB = document.getElementById('radioB');
+    const btnAccept = document.getElementById('btnAcceptSettlement');
+
+    if (opt === 'A') {
+      cardA.classList.remove('bg-surface-container-lowest');
+      cardA.classList.add('bg-surface-container-high/60');
+      cardB.classList.add('bg-surface-container-lowest');
+      cardB.classList.remove('bg-surface-container-high/60');
+
+      radioA.className = 'w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0';
+      radioA.firstElementChild.className = 'material-symbols-outlined text-white text-[14px]';
+
+      radioB.className = 'w-5 h-5 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0';
+      radioB.firstElementChild.className = 'material-symbols-outlined text-transparent text-[14px]';
+
+      if (btnAccept) {
+        btnAccept.innerHTML = '<span class="material-symbols-outlined text-[18px]">verified</span><span>Accept 45,000 FCFA Settlement</span>';
+      }
+    } else {
+      cardB.classList.remove('bg-surface-container-lowest');
+      cardB.classList.add('bg-surface-container-high/60');
+      cardA.classList.add('bg-surface-container-lowest');
+      cardA.classList.remove('bg-surface-container-high/60');
+
+      radioB.className = 'w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0';
+      radioB.firstElementChild.className = 'material-symbols-outlined text-white text-[14px]';
+
+      radioA.className = 'w-5 h-5 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0';
+      radioA.firstElementChild.className = 'material-symbols-outlined text-transparent text-[14px]';
+
+      if (btnAccept) {
+        btnAccept.innerHTML = '<span class="material-symbols-outlined text-[18px]">assignment_return</span><span>Confirm Return Protocol</span>';
+      }
+    }
+  }
+
+  function triggerAcceptance() {
+    triggerSignModal();
+  }
+
+  function triggerRejection() {
+    insertQuickMessage('I request a full return of the iPhone 13 Pro via Amour Mezam Bamenda depot.');
+  }
+
+  function insertQuickMessage(text) {
+    const input = document.getElementById('chatInputField');
+    const sendIcon = document.getElementById('sendIcon');
+    if (input) {
+      input.value = text;
+      input.focus();
+      if (sendIcon) {
+        sendIcon.textContent = 'send';
+      }
+    }
+  }
+
+  function triggerSignModal() {
+    const modal = document.getElementById('signModal');
+    if (modal.classList.contains('hidden')) {
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function confirmJointSettlement() {
+    triggerSignModal();
+    const banner = document.getElementById('agreementSuccessBanner');
+    if (banner) {
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+    }
+    const input = document.getElementById('chatInputField');
+    if (input) {
+      input.value = 'I have digitally verified and signed the 45,000 FCFA settlement agreement.';
+      handleSendMessage();
+    }
+  }
+
+  function simulateMediaUpload() {
+    const input = document.getElementById('chatInputField');
+    if (input) {
+      input.value = 'Attached: [Amour_Mezam_Counter_Slip_AM94028.pdf (1.1 MB)]';
+      const sendIcon = document.getElementById('sendIcon');
+      if (sendIcon) sendIcon.textContent = 'send';
+    }
+  }
+
+  function handleSendMessage() {
+    const input = document.getElementById('chatInputField');
+    const sendIcon = document.getElementById('sendIcon');
+    if (input && input.value.trim() !== '') {
+      const msg = input.value;
+      input.value = '';
+      if (sendIcon) sendIcon.textContent = 'mic';
+    }
+  }
+
+  // Toggle send/mic icon dynamically
+  document.getElementById('chatInputField')?.addEventListener('input', function(e) {
+    const sendIcon = document.getElementById('sendIcon');
+    if (sendIcon) {
+      if (e.target.value.trim().length > 0) {
+        sendIcon.textContent = 'send';
+      } else {
+        sendIcon.textContent = 'mic';
+      }
+    }
+  });
+</script></main></body></html>
