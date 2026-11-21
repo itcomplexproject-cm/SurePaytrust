@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 
 const STORAGE_KEY = "surepay.demo.v1";
 const agencies = ["Amour Mezam", "Moghamo", "Musango", "Local Rider"];
@@ -60,7 +60,9 @@ const sampleDeals = [
 const initialState = {
   availableBalance: 980000,
   trustScore: 98,
-  deals: sampleDeals
+  completedDeals: 48,
+  deals: sampleDeals,
+  disputes: []
 };
 
 const StoreContext = createContext(null);
@@ -74,7 +76,13 @@ function readStoredState() {
       typeof parsed.availableBalance === "number" &&
       typeof parsed.trustScore === "number" &&
       Array.isArray(parsed.deals)
-    ) return parsed;
+    ) {
+      return {
+        ...initialState,
+        ...parsed,
+        disputes: Array.isArray(parsed.disputes) ? parsed.disputes : []
+      };
+    }
     console.error("Saved SurePay demo data was invalid; using the sample ledger.");
   } catch (error) {
     console.error("Saved SurePay demo data could not be read; using the sample ledger.", error);
@@ -148,7 +156,52 @@ function StoreProvider({ children }) {
     });
   };
 
-  const value = { state, createDeal, verifyReceipt, confirmDelivery, storageWarning };
+  const submitDispute = (dealId, details) => {
+    const dispute = {
+      ...details,
+      id: `DSP-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
+      dealId,
+      status: "Under review",
+      createdAt: new Date().toISOString()
+    };
+    setState((current) => ({
+      ...current,
+      disputes: [dispute, ...(current.disputes || [])],
+      deals: current.deals.map((deal) =>
+        deal.id === dealId ? { ...deal, status: "Dispute Under Review" } : deal
+      )
+    }));
+    return dispute;
+  };
+
+  const resolveDispute = (disputeId) => {
+    setState((current) => {
+      const selected = (current.disputes || []).find((dispute) => dispute.id === disputeId);
+      if (!selected || selected.status === "Resolved") return current;
+      return {
+        ...current,
+        trustScore: Math.min(100, current.trustScore + 1),
+        disputes: current.disputes.map((dispute) =>
+          dispute.id === disputeId
+            ? { ...dispute, status: "Resolved", resolvedAt: new Date().toISOString() }
+            : dispute
+        ),
+        deals: current.deals.map((deal) =>
+          deal.id === selected.dealId ? { ...deal, status: "Delivered" } : deal
+        )
+      };
+    });
+  };
+
+  const value = {
+    state,
+    createDeal,
+    verifyReceipt,
+    confirmDelivery,
+    submitDispute,
+    resolveDispute,
+    storageWarning
+  };
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
@@ -169,26 +222,49 @@ function lockedBalance(deals) {
 }
 
 function Header() {
+  const { pathname } = useLocation();
+
   return (
-    <header className="topbar">
+    <header className="topbar app-topbar">
       <Link className="brand" to="/" aria-label="SurePay home">
         <span className="brand-mark" aria-hidden="true">S</span>
         <span className="brand-copy">
           <strong>SurePay</strong>
-          <small>Safe Local E-Commerce &amp; Escrow</small>
+          <small>{pathname === "/" ? "HOME DASHBOARD" : "SAFE LOCAL ESCROW"}</small>
         </span>
       </Link>
-      <Link className="help-link" to="/help">Help</Link>
+      <div className="topbar-actions">
+        <Link className="icon-button help-icon-button" to="/help" aria-label="Help and Support">?</Link>
+        <Link className="icon-button notification-button" to="/notifications" aria-label="Notifications">
+          <span aria-hidden="true">♧</span>
+          <i aria-hidden="true" />
+        </Link>
+        <Link className="profile-avatar" to="/profile" aria-label="Login and sign up">EM</Link>
+      </div>
     </header>
   );
 }
 
 function BottomNav() {
+  const { state } = useStore();
+  const location = useLocation();
+  const activeDeal = state.deals.find((deal) => deal.status !== "Delivered");
+  const onHome = location.pathname === "/" && !location.hash;
+
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
-      <Link to="/" className="nav-item"><span aria-hidden="true">⌂</span>Home</Link>
-      <Link to="/create" className="nav-item"><span aria-hidden="true">＋</span>New deal</Link>
-      <Link to="/help" className="nav-item"><span aria-hidden="true">?</span>Support</Link>
+      <Link to="/" className={`nav-item ${onHome ? "active" : ""}`} aria-current={onHome ? "page" : undefined}>
+        <span aria-hidden="true">▦</span>Home
+      </Link>
+      <Link to="/#deals" className={`nav-item ${location.hash === "#deals" ? "active" : ""}`} aria-current={location.hash === "#deals" ? "page" : undefined}>
+        <span aria-hidden="true">♢</span>Deals
+      </Link>
+      <Link to={activeDeal ? `/tracker/${activeDeal.id}` : "/"} className={`nav-item ${location.pathname.startsWith("/tracker/") ? "active" : ""}`} aria-current={location.pathname.startsWith("/tracker/") ? "page" : undefined}>
+        <span aria-hidden="true">⇢</span>Track
+      </Link>
+      <Link to="/profile" className={`nav-item ${["/profile", "/login", "/signup"].includes(location.pathname) ? "active" : ""}`} aria-current={["/profile", "/login", "/signup"].includes(location.pathname) ? "page" : undefined}>
+        <span aria-hidden="true">◉</span>Profile
+      </Link>
     </nav>
   );
 }
@@ -236,43 +312,61 @@ function Shell({ children }) {
 function Home() {
   const { state } = useStore();
   const navigate = useNavigate();
+  const [filter, setFilter] = useState("all");
+  const [walletMessage, setWalletMessage] = useState("");
   const activeDeals = state.deals.filter((deal) => deal.status !== "Delivered");
+  const transitDeals = activeDeals.filter((deal) => ["Funds Locked", "In Transit"].includes(deal.status));
+  const actionDeals = activeDeals.filter((deal) => !["Funds Locked", "In Transit"].includes(deal.status));
   const trackedDeal = activeDeals.find((deal) => deal.status !== "Funds Locked") || activeDeals[0];
+  const visibleDeals = filter === "history"
+    ? state.deals.filter((deal) => deal.status === "Delivered")
+    : filter === "transit"
+      ? transitDeals
+      : filter === "action"
+        ? actionDeals
+        : activeDeals;
 
   return (
     <Shell>
       <main className="page home-page">
         <section className="welcome-row">
-          <div>
-            <p className="eyebrow">YOUR ESCROW WALLET</p>
-            <h1>Good day, Emmanuel <span aria-hidden="true">👋</span></h1>
+          <div className="welcome-copy">
+            <h1>Bonjour, Emmanuel <span aria-hidden="true">👋</span></h1>
+            <p><span aria-hidden="true">⌖</span> Douala Commerce &amp; Logistics Hub</p>
           </div>
-          <span className="verified-pill"><span aria-hidden="true">✓</span> {state.trustScore}% Verified</span>
+          <span className="verified-pill"><span aria-hidden="true">✿</span> {state.trustScore}% Verified</span>
         </section>
 
-        <section className="balance-card" aria-label="Wallet balances">
-          <div className="balance-top">
-            <div>
-              <p className="balance-label">In Escrow</p>
-              <strong>{formatXaf(lockedBalance(state.deals))}</strong>
-            </div>
-            <span className="shield-icon" aria-hidden="true">⌑</span>
+        <section className="home-stats" aria-label="Trader summary">
+          <div><span>CNI STATUS</span><strong>♢ Level 2</strong></div>
+          <div><span>COMPLETED</span><strong>{state.completedDeals || 48} Deals</strong></div>
+          <div><span>DISPUTES</span><strong>{(state.disputes || []).filter((dispute) => dispute.status !== "Resolved").length} Active</strong></div>
+        </section>
+
+        <section className="balance-card home-balance-card" aria-label="Wallet balances">
+          <div className="home-balance-heading">
+            <span>♙ IN ESCROW (PROTECTED)</span>
+            <strong>{activeDeals.length} Active Deals</strong>
           </div>
-          <div className="balance-divider" />
-          <div className="balance-bottom">
+          <div className="home-balance-amount">{formatXaf(lockedBalance(state.deals))}</div>
+          <div className="home-balance-footer">
             <div>
-              <p className="balance-label">Available</p>
+              <span>AVAILABLE BALANCE</span>
               <strong>{formatXaf(state.availableBalance)}</strong>
             </div>
-            <span className="secure-label">Funds protected</span>
+            <div className="wallet-actions">
+              <button type="button" onClick={() => setWalletMessage("Demo only — no mobile-money top-up was made.")}>＋ Top Up</button>
+              <button type="button" onClick={() => setWalletMessage("Demo only — withdrawals are disabled.")}>▣ Withdraw</button>
+            </div>
           </div>
+          {walletMessage && <p className="wallet-message" role="status">{walletMessage}</p>}
         </section>
 
-        <section className="quick-actions" aria-label="Escrow actions">
+        <section className="quick-actions home-actions" aria-label="Escrow actions">
           <Link className="action-card primary-action" to="/create">
-            <span className="action-icon" aria-hidden="true">＋</span>
-            <strong>Create escrow deal</strong>
-            <small>Lock funds safely</small>
+            <span className="action-icon" aria-hidden="true">♢</span>
+            <strong>＋ New Escrow</strong>
+            <small>Lock buyer funds safely</small>
           </Link>
           <button
             className="action-card"
@@ -280,64 +374,357 @@ function Home() {
             disabled={!trackedDeal}
             onClick={() => trackedDeal && navigate(`/tracker/${trackedDeal.id}`)}
           >
-            <span className="action-icon delivery-icon" aria-hidden="true">↗</span>
+            <span className="action-icon delivery-icon" aria-hidden="true">▣</span>
             <strong>Track delivery</strong>
-            <small>{trackedDeal ? "View a live shipment" : "Create a deal to get started"}</small>
+            <small>{trackedDeal ? "Scan waybill / SMS code" : "Create a deal to get started"}</small>
           </button>
         </section>
 
-        <section className="trust-card">
-          <div className="trust-symbol" aria-hidden="true">✓</div>
-          <div>
-            <strong>{state.trustScore}% Verified Trader</strong>
-            <p>Your completed deals build buyer and seller confidence.</p>
+        <section className="trusted-hub">
+          <div className="hub-heading">
+            <span>TRUSTED HUB DIRECT</span>
+            <span>Douala - Yaounde Axis</span>
           </div>
-          <span className="trust-chevron" aria-hidden="true">›</span>
+          <div className="hub-cards">
+            <button type="button" onClick={() => navigate("/create")} className="hub-card" aria-label="Start an escrow with Mama Tcho Fabrics">
+              <span className="hub-avatar">MT</span>
+              <span><strong>Mama Tcho Fab...</strong><small>✿ 100% CNI</small></span>
+            </button>
+            <button type="button" onClick={() => navigate("/create")} className="hub-card" aria-label="Start an escrow with Akwa Tech Direct">
+              <span className="hub-avatar blue">AT</span>
+              <span><strong>Akwa Tech Direct</strong><small>✿ 84 Deals</small></span>
+            </button>
+          </div>
         </section>
 
         <section className="deals-section" id="deals">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">YOUR ACTIVITY</p>
-              <h2>Your escrow deals</h2>
+              <h2>Active Escrow Deals</h2>
             </div>
-            <span className="deal-count">{activeDeals.length} active</span>
+            <button type="button" className="history-link" onClick={() => setFilter(filter === "history" ? "all" : "history")}>
+              {filter === "history" ? "View Active Deals" : "View History"}
+            </button>
           </div>
-          {state.deals.length === 0 ? (
+          <div className="deal-filters" role="group" aria-label="Filter escrow deals">
+            <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>All ({activeDeals.length})</button>
+            <button type="button" aria-pressed={filter === "transit"} onClick={() => setFilter("transit")}>In Transit ({transitDeals.length})</button>
+            <button type="button" aria-pressed={filter === "action"} onClick={() => setFilter("action")}>Action Required ({actionDeals.length})</button>
+          </div>
+          {visibleDeals.length === 0 ? (
             <div className="empty-state">
               <span aria-hidden="true">◇</span>
-              <strong>No deals yet</strong>
-              <p>Create a protected escrow to get started.</p>
+              <strong>{filter === "history" ? "No completed deals yet" : "No deals yet"}</strong>
+              <p>{filter === "history" ? "Completed demo receipts will appear here." : "Create a protected escrow to get started."}</p>
               <Link className="button button-primary" to="/create">Create a deal</Link>
             </div>
           ) : (
-            <div className="deal-list">
-              {state.deals.map((deal) => (
-                <Link className="deal-card" to={`/tracker/${deal.id}`} key={deal.id}>
-                  <div className="deal-card-top">
-                    <span className={`deal-symbol ${deal.status === "Delivered" ? "done" : ""}`} aria-hidden="true">
-                      {deal.status === "Delivered" ? "✓" : "◇"}
-                    </span>
-                    <span className="deal-title-group">
+            <div className="home-deal-list">
+              {visibleDeals.map((deal, index) => (
+                <article className="home-deal-card" key={deal.id}>
+                  <Link className="home-deal-main" to={`/tracker/${deal.id}`}>
+                    <span className={`product-thumb product-thumb-${index % 3}`} aria-hidden="true">{index === 0 ? "▧" : index === 1 ? "▥" : "▤"}</span>
+                    <span className="home-deal-title">
                       <strong>{deal.title}</strong>
-                      <small>{deal.origin} <span aria-hidden="true">→</span> {deal.destination}</small>
+                      <small>{deal.origin} <b>➜</b> {deal.destination}</small>
                     </span>
-                    <strong className="deal-price">{formatXaf(deal.price)}</strong>
+                    <strong className="home-deal-price">{new Intl.NumberFormat("fr-FR").format(deal.price)}<small>XAF</small></strong>
+                  </Link>
+                  <div className="home-deal-agency">
+                    <span>▣ {deal.agency}</span>
+                    <strong>{deal.waybill ? `◷ ETA: ${deal.status === "In Transit" ? "Today, 4:30 PM" : deal.waybill}` : `#${deal.id}`}</strong>
                   </div>
-                  <div className="deal-card-bottom">
-                    <span>{deal.agency}</span>
-                    <span className={`status-chip ${deal.status === "Delivered" ? "status-done" : ""}`}>{deal.status}</span>
+                  <div className="home-deal-footer">
+                    <span className={`deal-state ${deal.status === "In Transit" ? "blue" : deal.status === "Awaiting Inspection" ? "orange" : ""}`}>
+                      {deal.status === "Awaiting Inspection" ? "♧ Awaiting Inspection" : deal.status === "Dispute Under Review" ? "Dispute in review" : deal.status === "Delivered" ? "Delivered" : "♙ Funds Locked & Protected"}
+                    </span>
+                    <Link to={`/tracker/${deal.id}`} className="deal-action">
+                      {deal.status === "Awaiting Inspection" ? "Release Code" : deal.status === "Delivered" ? "View Receipt" : "Inspect & Release"} ›
+                    </Link>
                   </div>
-                  <span className="deal-id">#{deal.id}</span>
-                </Link>
+                </article>
               ))}
             </div>
           )}
         </section>
-        <aside className="notice-card">
-          <strong>Safe commerce, close to home.</strong>
-          <p>SurePay keeps your payment in escrow while your goods travel between Cameroon’s cities.</p>
+        <aside className="framework-card">
+          <strong>♧ SUREPAY DEMO ESCROW</strong>
+          <p>Sample transactions only. This preview does not move real funds or provide a regulated settlement service.</p>
+          <div><span>▣ Demo ledger</span><b>Cameroon</b></div>
         </aside>
+      </main>
+    </Shell>
+  );
+}
+
+function Profile() {
+  const { pathname } = useLocation();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const isSignup = pathname === "/signup";
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setPassword("");
+    setMessage("Demo only: no account was created and no credentials were sent or saved.");
+  };
+
+  return (
+    <Shell>
+      <main className="page">
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Back to Home</Link>
+        <div className="page-title">
+          <p className="eyebrow">YOUR SUREPAY PROFILE</p>
+          <h1>{isSignup ? "Create your demo profile" : "Welcome back"}</h1>
+          <p>Sign up or log in to explore the SurePay demo. No real account is needed.</p>
+        </div>
+        <div className="auth-tabs" role="tablist" aria-label="Demo profile">
+          <Link to="/login" role="tab" aria-selected={!isSignup}>Log in</Link>
+          <Link to="/signup" role="tab" aria-selected={isSignup}>Sign up</Link>
+        </div>
+        <form className="form-card auth-card" onSubmit={handleSubmit}>
+          {isSignup && (
+            <label className="field">
+              <span>Full name</span>
+              <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" required />
+            </label>
+          )}
+          <label className="field">
+            <span>Email address</span>
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
+          </label>
+          <label className="field">
+            <span>Password</span>
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={isSignup ? "new-password" : "current-password"} required />
+          </label>
+          <button type="submit" className="button button-primary full-button">{isSignup ? "Create demo profile" : "Log in to demo"}</button>
+          <p className="form-footnote">Demo mode only — credentials are not sent to a server or stored.</p>
+          {message && <p className="inline-message" role="status">{message}</p>}
+        </form>
+        <Link to="/help" className="support-text-link">Need help? Contact SurePay support</Link>
+      </main>
+    </Shell>
+  );
+}
+
+function Notifications() {
+  const { state } = useStore();
+  const navigate = useNavigate();
+  const latestDeal = state.deals.find((deal) => deal.status !== "Delivered");
+
+  return (
+    <Shell>
+      <main className="page">
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Back to Home</Link>
+        <div className="page-title">
+          <p className="eyebrow">UPDATES</p>
+          <h1>Notifications</h1>
+          <p>Recent demo activity for your escrow deals.</p>
+        </div>
+        <div className="notification-list">
+          {latestDeal ? (
+            <button type="button" className="notification-card" onClick={() => navigate(`/tracker/${latestDeal.id}`)}>
+              <span aria-hidden="true">▣</span>
+              <span><strong>Escrow update</strong><small>{latestDeal.title} · {latestDeal.status}</small></span>
+              <b>›</b>
+            </button>
+          ) : (
+            <p className="empty-state">You’re all caught up.</p>
+          )}
+          <Link to="/create" className="notification-card">
+            <span aria-hidden="true">＋</span>
+            <span><strong>Ready for a new deal?</strong><small>Create a protected demo escrow.</small></span>
+            <b>›</b>
+          </Link>
+        </div>
+      </main>
+    </Shell>
+  );
+}
+
+function Dispute() {
+  const { id } = useParams();
+  const { state, submitDispute, resolveDispute } = useStore();
+  const navigate = useNavigate();
+  const deal = state.deals.find((item) => item.id === id);
+  const [reason, setReason] = useState("Damaged or wrong item received");
+  const [statement, setStatement] = useState("");
+  const [resolution, setResolution] = useState("Partial refund / repair discount");
+  const [evidence, setEvidence] = useState([]);
+  const [caseId, setCaseId] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  if (!deal) return <Navigate to="/" replace />;
+
+  const createCase = () => {
+    if (!statement.trim()) {
+      setError("Describe the issue so the demo mediator has context.");
+      return null;
+    }
+    setError("");
+    return submitDispute(deal.id, { reason, statement: statement.trim(), resolution, evidence });
+  };
+
+  const handleMediation = () => {
+    if (caseId) {
+      setMessage(`Demo only: no WhatsApp message was sent. Case #${caseId} is ready for mediation.`);
+      return;
+    }
+    const dispute = createCase();
+    if (!dispute) return;
+    setCaseId(dispute.id);
+    setMessage(`Demo only: WhatsApp was not opened. Case #${dispute.id} was saved for simulated mediation.`);
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const dispute = caseId
+      ? state.disputes.find((item) => item.id === caseId)
+      : createCase();
+    if (!dispute) return;
+    resolveDispute(dispute.id);
+    navigate(`/resolution/${dispute.id}`);
+  };
+
+  return (
+    <Shell>
+      <main className="page dispute-page">
+        <Link to={`/tracker/${deal.id}`} className="back-link"><span aria-hidden="true">←</span>Back to deal</Link>
+        <div className="page-title">
+          <p className="eyebrow">DISPUTE &amp; MEDIATION</p>
+          <h1>Tell us what happened</h1>
+          <p>Your demo escrow is frozen while you record the issue. No funds move in this preview.</p>
+        </div>
+        <section className="dispute-summary">
+          <span className="status-chip">ESCROW FROZEN · DEMO</span>
+          <strong>{formatXaf(deal.price)}</strong>
+          <p>#{deal.id} · {deal.title}</p>
+          <small>{deal.agency} · {deal.origin} to {deal.destination}</small>
+        </section>
+        <form className="form-card dispute-form" onSubmit={handleSubmit}>
+          <fieldset className="field-group">
+            <legend>1 · Select dispute reason</legend>
+            {["Damaged or wrong item received", "Package missing at agency", "Waybill and item discrepancy", "Seller unresponsive / window breach"].map((item) => (
+              <label className="choice-card" key={item}>
+                <input type="radio" name="reason" value={item} checked={reason === item} onChange={() => setReason(item)} />
+                <span><strong>{item}</strong><small>{item === reason ? "Selected for this demo case." : "Choose this if it best describes the issue."}</small></span>
+              </label>
+            ))}
+          </fieldset>
+          <label className="field">
+            <span>2 · Inspection statement</span>
+            <textarea value={statement} onChange={(event) => setStatement(event.target.value)} rows="4" placeholder="Describe the issue and the condition of the package." required />
+          </label>
+          <label className="field">
+            <span>Attach demo evidence (optional)</span>
+            <input type="file" accept="image/*,video/*" multiple onChange={(event) => setEvidence(Array.from(event.target.files || []).map((file) => file.name))} />
+          </label>
+          {evidence.length > 0 && <p className="file-list" role="status">{evidence.join(", ")}</p>}
+          <fieldset className="field-group">
+            <legend>3 · Requested resolution</legend>
+            {["Full refund", "Partial refund / repair discount", "Return parcel to seller"].map((item) => (
+              <label className="choice-card compact" key={item}>
+                <input type="radio" name="resolution" value={item} checked={resolution === item} onChange={() => setResolution(item)} />
+                <span><strong>{item}</strong></span>
+              </label>
+            ))}
+          </fieldset>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <section className="mediation-card" id="mediation">
+            <div><strong>24/7 SurePay Mediation Desk</strong><p>Simulate a three-way chat with buyer, seller, and mediator.</p></div>
+            <button type="button" className="button button-primary full-button" onClick={handleMediation}>
+              Open WhatsApp Mediation (Demo)
+            </button>
+            {message && <p className="inline-message" role="status">{message}</p>}
+            {caseId && <Link className="button button-secondary full-button" to={`/resolution/${caseId}`}>View demo resolution receipt</Link>}
+          </section>
+          {!caseId && (
+            <button type="submit" className="button button-secondary full-button">Submit Dispute Without WhatsApp</button>
+          )}
+          <p className="form-footnote">Demo only — no WhatsApp message, refund, or mobile-money payout is sent.</p>
+        </form>
+      </main>
+    </Shell>
+  );
+}
+
+function Resolution() {
+  const { id } = useParams();
+  const { state, resolveDispute } = useStore();
+  const [message, setMessage] = useState("");
+  const dispute = (state.disputes || []).find((item) => item.id === id);
+  const deal = state.deals.find((item) => item.id === (dispute ? dispute.dealId : id));
+
+  if (!deal) return <Navigate to="/" replace />;
+
+  const buyerRefund = dispute && dispute.resolution === "Full refund"
+    ? deal.price
+    : dispute && dispute.resolution === "Return parcel to seller"
+      ? deal.price
+      : Math.min(45000, deal.price);
+  const sellerSettlement = deal.price - buyerRefund;
+  const isResolved = dispute?.status === "Resolved";
+  const caseId = dispute?.id || "DSP-DEMO-4091";
+  const receiptText = `SurePay demo settlement receipt\nCase #${caseId}\nDeal #${deal.id}\nBuyer refund: ${formatXaf(buyerRefund)}\nSeller settlement: ${formatXaf(sellerSettlement)}\nNo real payout was made.`;
+
+  const downloadReceipt = () => {
+    const url = URL.createObjectURL(new Blob([receiptText], { type: "text/plain" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `surepay-demo-receipt-${caseId}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyReceipt = async () => {
+    try {
+      await navigator.clipboard.writeText(receiptText);
+      setMessage("Demo receipt copied. No WhatsApp message was sent.");
+    } catch (error) {
+      console.error("SurePay could not copy the demo receipt.", error);
+      setMessage("Demo only: copying is unavailable here; no WhatsApp message was sent.");
+    }
+  };
+
+  return (
+    <Shell>
+      <main className="page resolution-page">
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Return to SurePay Home</Link>
+        <section className="certificate-card">
+          <span className="certificate-mark" aria-hidden="true">✓</span>
+          <span className="certificate-kicker">DEMO RESOLUTION CERTIFICATE</span>
+          <h1>{isResolved ? "Dispute Settled" : "Resolution Preview"}</h1>
+          <p>Case #{caseId} · {isResolved ? "Simulated demo settlement" : "No payout has been made"}</p>
+          <div className="audit-hash"><span>DEMO CASE RECORD</span><strong>{deal.id}</strong></div>
+        </section>
+        {!isResolved && dispute && (
+          <button type="button" className="button button-primary full-button" onClick={() => resolveDispute(dispute.id)}>
+            Simulate demo resolution
+          </button>
+        )}
+        <section className="payout-card">
+          <div className="payout-heading"><span>♙</span><div><small>DEMO ESCROW RELEASE</small><strong>{formatXaf(deal.price)}</strong></div><b>SIMULATED</b></div>
+          <div className="payout-split">
+            <div><span>Buyer · {deal.phone || "Demo wallet"}</span><strong>{formatXaf(buyerRefund)}</strong><small>Refund / repair allowance</small></div>
+            <div><span>Seller · {deal.agency}</span><strong>{formatXaf(sellerSettlement)}</strong><small>Net goods settlement</small></div>
+          </div>
+          <p className="demo-disclaimer">No MTN MoMo or Orange Money payout occurred. This is a local demo receipt only.</p>
+        </section>
+        <section className="evidence-card">
+          <h2>Case evidence record</h2>
+          <p>{deal.title} · {deal.origin} → {deal.destination} · {deal.agency}</p>
+          {dispute?.statement && <blockquote>{dispute.statement}</blockquote>}
+          {dispute?.evidence?.length > 0 && <small>Evidence names: {dispute.evidence.join(", ")}</small>}
+        </section>
+        <div className="resolution-actions">
+          <button type="button" className="button button-primary full-button" onClick={downloadReceipt}>↓ Download demo receipt</button>
+          <button type="button" className="button button-primary full-button" onClick={copyReceipt}>♧ Copy receipt text (WhatsApp demo)</button>
+          {message && <p className="inline-message" role="status">{message}</p>}
+          <Link to="/" className="button button-secondary full-button">⌂ Return to SurePay Home</Link>
+        </div>
       </main>
     </Shell>
   );
@@ -357,6 +744,8 @@ function CreateDeal() {
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [userRole, setUserRole] = useState("buying");
+  const [inspectionHours, setInspectionHours] = useState(24);
   const price = Number(form.price) || 0;
   const fee = Math.round(price * 0.02);
   const total = price + fee;
@@ -397,7 +786,9 @@ function CreateDeal() {
       paymentMethod: form.paymentMethod,
       origin: form.origin.trim(),
       destination: form.destination.trim(),
-      agency: form.agency
+      agency: form.agency,
+      userRole,
+      inspectionHours
     });
     setSubmitting(false);
     if (result.error) {
@@ -415,6 +806,15 @@ function CreateDeal() {
           <p className="eyebrow">BUY WITH CONFIDENCE</p>
           <h1>Create an escrow deal</h1>
           <p>Agree on the details. We’ll keep the payment safe until delivery.</p>
+        </div>
+
+        <section className="create-progress" aria-label="Deal setup progress">
+          <strong>1 · Deal Details</strong><span>2 · Payment</span><span>3 · Escrow Lock</span>
+          <div><i /></div>
+        </section>
+        <div className="role-switch" role="group" aria-label="Your role">
+          <button type="button" aria-pressed={userRole === "buying"} onClick={() => setUserRole("buying")}>♙ I am Buying</button>
+          <button type="button" aria-pressed={userRole === "selling"} onClick={() => setUserRole("selling")}>▤ I am Selling</button>
         </div>
 
         <form className="form-card" onSubmit={handleSubmit}>
@@ -471,6 +871,16 @@ function CreateDeal() {
                 {agencies.map((agency) => <option key={agency}>{agency}</option>)}
               </select>
             </label>
+            <fieldset className="field-group">
+              <legend>Inspection period</legend>
+              <div className="inspection-options">
+                {[6, 24, 48].map((hours) => (
+                  <button type="button" key={hours} aria-pressed={inspectionHours === hours} onClick={() => setInspectionHours(hours)}>
+                    <strong>{hours} Hours</strong><small>{hours === 6 ? "Fast handover" : hours === 24 ? "Electronics" : "Testing &amp; care"}</small>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </fieldset>
 
           <section className="fee-summary" aria-live="polite">
@@ -679,6 +1089,12 @@ function Tracker() {
           )}
         </section>
 
+        <section className="tracker-dispute-actions">
+          <p>Need help with this shipment?</p>
+          <Link to={`/dispute/${deal.id}`} className="button button-secondary full-button">Raise Dispute / Flag Issue</Link>
+          <Link to={`/dispute/${deal.id}#mediation`} className="mediation-link">24/7 WhatsApp Mediation · Demo only</Link>
+        </section>
+
         <section className="contact-card">
           <span aria-hidden="true">◉</span>
           <p>Questions about this deal? <a href="mailto:support@surepay.cm">Contact SurePay support</a></p>
@@ -695,6 +1111,12 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<CreateDeal />} />
         <Route path="/tracker/:id" element={<Tracker />} />
+        <Route path="/dispute/:id" element={<Dispute />} />
+        <Route path="/resolution/:id" element={<Resolution />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/login" element={<Profile />} />
+        <Route path="/signup" element={<Profile />} />
         <Route path="/help" element={<Help />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
