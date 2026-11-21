@@ -178,7 +178,7 @@ function Header() {
           <small>Safe Local E-Commerce &amp; Escrow</small>
         </span>
       </Link>
-      <a className="help-link" href="mailto:support@surepay.cm">Help</a>
+      <Link className="help-link" to="/help">Help</Link>
     </header>
   );
 }
@@ -188,8 +188,32 @@ function BottomNav() {
     <nav className="bottom-nav" aria-label="Main navigation">
       <Link to="/" className="nav-item"><span aria-hidden="true">⌂</span>Home</Link>
       <Link to="/create" className="nav-item"><span aria-hidden="true">＋</span>New deal</Link>
-      <a href="mailto:support@surepay.cm" className="nav-item"><span aria-hidden="true">?</span>Support</a>
+      <Link to="/help" className="nav-item"><span aria-hidden="true">?</span>Support</Link>
     </nav>
+  );
+}
+
+function Help() {
+  return (
+    <Shell>
+      <main className="page">
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Back to Home</Link>
+        <div className="page-title">
+          <p className="eyebrow">SUREPAY SUPPORT</p>
+          <h1>How can we help?</h1>
+          <p>Find help with a protected purchase or contact our support team.</p>
+        </div>
+        <section className="notice-card">
+          <strong>How escrow works</strong>
+          <p>Your payment stays protected while the seller ships your item. Confirm delivery after you receive and inspect it.</p>
+        </section>
+        <section className="notice-card">
+          <strong>Need help with a transaction?</strong>
+          <p>Include your SurePay deal ID so our team can help you faster.</p>
+          <a className="button button-primary full-button" href="mailto:support@surepay.cm">Email support@surepay.cm</a>
+        </section>
+      </main>
+    </Shell>
   );
 }
 
@@ -671,6 +695,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<CreateDeal />} />
         <Route path="/tracker/:id" element={<Tracker />} />
+        <Route path="/help" element={<Help />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </StoreProvider>
