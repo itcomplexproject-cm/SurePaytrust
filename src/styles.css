@@ -35,7 +35,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: var(--canvas);
   box-shadow: 0 0 48px #122c2412;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
 }
 .topbar {
   min-height: 76px;
