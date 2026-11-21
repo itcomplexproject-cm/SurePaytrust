@@ -2,7 +2,143 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 
 const STORAGE_KEY = "surepay.demo.v1";
+const USER_STORAGE_KEY = "surepay_user";
+const PREFERENCES_STORAGE_KEY = "surepay.preferences.v1";
 const agencies = ["Amour Mezam", "Moghamo", "Musango", "Local Rider"];
+const defaultUser = { name: "Emmanuel", phone: "+237 677 123 456", email: "emmanuel@surepay.cm" };
+const defaultPreferences = { theme: "light", language: "en", biometricLock: false, smsAlerts: true };
+
+const words = {
+  en: {
+    home: "Home", deals: "Deals", create: "Create", support: "Support", settings: "Settings",
+    dashboard: "Home Dashboard", safeEscrow: "Safe Local Escrow", greeting: "Good day",
+    available: "Available balance", inEscrow: "In Escrow", verifiedTrader: "Verified Trader",
+    createDeal: "Create escrow deal", trackDelivery: "Track delivery", recentDeals: "Active Escrow Deals",
+    viewAllDeals: "View all deals", dealsTitle: "Deals & Escrow Ledger", dealsSubtitle: "Every protected transaction, in one place.",
+    totalActive: "Active deals", protectedTotal: "Protected in escrow", completed: "Completed deals",
+    searchDeals: "Search item, deal ID, or transport agency", all: "All", fundsLocked: "Funds Locked",
+    inTransit: "In Transit", delivered: "Delivered", disputed: "Disputed", openTracker: "Open Live Tracker →",
+    emptyDeals: "No deals match your search", emptyDealsHint: "Try another status or search, or create a new escrow.",
+    createNewDeal: "+ Create New Escrow Deal", settingsTitle: "Settings", profile: "Demo profile",
+    appearance: "Appearance", lightMode: "Light mode", darkMode: "Dark mode", language: "Language",
+    security: "Security & notifications", biometric: "Biometric / PIN lock", sms: "SMS escrow alerts",
+    resetDemo: "Reset demo data", logout: "Log out", saved: "Settings saved on this device.",
+    helpTitle: "Help & Safety Center", helpSubtitle: "Learn how SurePay keeps your demo transactions organized.",
+    safetyGuide: "Escrow safety guide", mediation: "Open demo dispute mediation",
+    signIn: "Sign in", register: "Create account", fullName: "Full name", phone: "Phone number",
+    email: "Email address", password: "Password", continue: "Continue to SurePay",
+    oneTap: "One-Tap Demo Login", authNote: "Demo access only. No real account or payment is created.",
+    selectTheme: "Choose your preferred appearance.", chooseLanguage: "Choose your language.",
+    resetDone: "Demo data has been reset.", logoutNote: "You have been logged out of the demo.",
+    topUp: "Top Up", withdraw: "Withdraw", activeDeals: "Active deals", actionRequired: "Action Required",
+    trustedHub: "TRUSTED HUB DIRECT", dealsAxis: "Douala - Yaounde Axis", cniStatus: "CNI STATUS",
+    completedCount: "COMPLETED", disputesCount: "DISPUTES", levelTwo: "Level 2", noDisputes: "Active",
+    allDeals: "All", demoNotice: "SUREPAY DEMO ESCROW", demoNoticeText: "Sample transactions only. This preview does not move real funds or provide a regulated settlement service.",
+    inTransitStatus: "In Transit", awaitingInspection: "Awaiting Inspection", active: "Active",
+    cniPlaceholder: "CNI STATUS", allActivities: "All activity", lockedProtected: "Funds Locked & Protected",
+    noDeals: "No deals yet", createProtected: "Lock buyer funds safely", inspectRelease: "Inspect & Release",
+    createNew: "Create a deal"
+  },
+  fr: {
+    home: "Accueil", deals: "Offres", create: "Créer", support: "Aide", settings: "Paramètres",
+    dashboard: "Tableau de bord", safeEscrow: "Séquestre local sécurisé", greeting: "Bonjour",
+    available: "Solde disponible", inEscrow: "En séquestre", verifiedTrader: "Vendeur vérifié",
+    createDeal: "Créer une offre séquestre", trackDelivery: "Suivre la livraison", recentDeals: "Offres actives",
+    viewAllDeals: "Voir toutes les offres", dealsTitle: "Offres et registre séquestre", dealsSubtitle: "Toutes vos transactions protégées, au même endroit.",
+    totalActive: "Offres actives", protectedTotal: "Montant protégé", completed: "Offres terminées",
+    searchDeals: "Rechercher un article, un identifiant ou une agence", all: "Toutes", fundsLocked: "Fonds bloqués",
+    inTransit: "En transit", delivered: "Livrée", disputed: "Litige", openTracker: "Ouvrir le suivi →",
+    emptyDeals: "Aucune offre correspondante", emptyDealsHint: "Modifiez le filtre ou créez une nouvelle offre séquestre.",
+    createNewDeal: "+ Créer une offre séquestre", settingsTitle: "Paramètres", profile: "Profil démo",
+    appearance: "Apparence", lightMode: "Mode clair", darkMode: "Mode sombre", language: "Langue",
+    security: "Sécurité et notifications", biometric: "Verrouillage biométrique / code PIN", sms: "Alertes séquestre par SMS",
+    resetDemo: "Réinitialiser les données démo", logout: "Déconnexion", saved: "Paramètres enregistrés sur cet appareil.",
+    helpTitle: "Centre d'aide et de sécurité", helpSubtitle: "Découvrez comment SurePay organise vos transactions démo.",
+    safetyGuide: "Guide de sécurité du séquestre", mediation: "Ouvrir la médiation démo",
+    signIn: "Se connecter", register: "Créer un compte", fullName: "Nom complet", phone: "Numéro de téléphone",
+    email: "Adresse e-mail", password: "Mot de passe", continue: "Continuer avec SurePay",
+    oneTap: "Connexion démo en un clic", authNote: "Accès démo uniquement. Aucun compte réel ni paiement n'est créé.",
+    selectTheme: "Choisissez votre apparence préférée.", chooseLanguage: "Choisissez votre langue.",
+    resetDone: "Les données démo ont été réinitialisées.", logoutNote: "Vous êtes déconnecté de la démo.",
+    topUp: "Recharger", withdraw: "Retirer", activeDeals: "Offres actives", actionRequired: "Action requise",
+    trustedHub: "RÉSEAU DE CONFIANCE", dealsAxis: "Axe Douala - Yaoundé", cniStatus: "STATUT CNI",
+    completedCount: "TERMINÉES", disputesCount: "LITIGES", levelTwo: "Niveau 2", noDisputes: "Actifs",
+    allDeals: "Toutes", demoNotice: "SÉQUESTRE DÉMO SUREPAY", demoNoticeText: "Transactions exemples uniquement. Aucun fonds réel n'est transféré et aucun service de règlement réglementé n'est fourni.",
+    inTransitStatus: "En transit", awaitingInspection: "En attente d'inspection", active: "Actives",
+    cniPlaceholder: "STATUT CNI", allActivities: "Toute l'activité", lockedProtected: "Fonds bloqués et protégés",
+    noDeals: "Aucune offre", createProtected: "Bloquer les fonds de l'acheteur", inspectRelease: "Inspecter et libérer",
+    createNew: "Créer une offre"
+  }
+};
+
+const frenchPhrases = {
+  "BUY WITH CONFIDENCE": "ACHETEZ EN TOUTE CONFIANCE",
+  "Create an escrow deal": "Créer une offre séquestre",
+  "Agree on the details. We’ll keep the payment safe until delivery.": "Convenez des détails. Nous protégeons le paiement jusqu'à la livraison.",
+  "Deal Details": "Détails de l'offre",
+  Payment: "Paiement",
+  "Escrow Lock": "Blocage séquestre",
+  "Your role": "Votre rôle",
+  "I am Buying": "Je suis acheteur",
+  "I am Selling": "Je suis vendeur",
+  "Item title": "Nom de l'article",
+  "Price in XAF": "Prix en XAF",
+  "Suggested amounts": "Montants suggérés",
+  "Mobile money details": "Détails Mobile Money",
+  "Payment method": "Mode de paiement",
+  "Mobile number": "Numéro Mobile Money",
+  "Delivery route": "Itinéraire de livraison",
+  "Origin city": "Ville de départ",
+  "Destination city": "Ville d'arrivée",
+  "Transport agency": "Agence de transport",
+  "Inspection period": "Période d'inspection",
+  "Fast handover": "Remise rapide",
+  Electronics: "Appareils électroniques",
+  "Testing & care": "Essais et précautions",
+  "Item price": "Prix de l'article",
+  "SurePay protection fee (2%)": "Frais de protection SurePay (2 %)",
+  "Total to lock": "Total à bloquer",
+  "Lock funds safely": "Bloquer les fonds",
+  "LIVE ESCROW TRACKER": "SUIVI DU SÉQUESTRE",
+  "Protected in escrow": "Protégé en séquestre",
+  "SHIPMENT UPDATES": "SUIVI DE L'EXPÉDITION",
+  "Deal timeline": "Étapes de l'offre",
+  "Deal created": "Offre créée",
+  "Funds locked": "Fonds bloqués",
+  "Receipt verified · In transit": "Reçu vérifié · En transit",
+  "Agency dispatch": "Expédition par l'agence",
+  "Delivery confirmed": "Livraison confirmée",
+  "Verify dispatch receipt": "Vérifier le reçu d'expédition",
+  "Upload dispatch receipt": "Téléverser le reçu",
+  "Confirm delivery": "Confirmer la livraison",
+  "Raise Dispute / Flag Issue": "Signaler un litige",
+  "DISPUTE & MEDIATION": "LITIGE ET MÉDIATION",
+  "Tell us what happened": "Que s'est-il passé ?",
+  "ESCROW FROZEN · DEMO": "SÉQUESTRE GELÉ · DÉMO",
+  "1 · Select dispute reason": "1 · Motif du litige",
+  "2 · Inspection statement": "2 · Description du problème",
+  "3 · Requested resolution": "3 · Résolution souhaitée",
+  "Open WhatsApp Mediation (Demo)": "Ouvrir la médiation WhatsApp (démo)",
+  "Submit Dispute Without WhatsApp": "Envoyer le litige sans WhatsApp",
+  "DEMO RESOLUTION CERTIFICATE": "CERTIFICAT DE RÉSOLUTION DÉMO",
+  "Dispute Settled": "Litige résolu",
+  "Resolution Preview": "Aperçu de la résolution",
+  "↓ Download demo receipt": "↓ Télécharger le reçu démo",
+  "♧ Copy receipt text (WhatsApp demo)": "♧ Copier le reçu (démo WhatsApp)",
+  "UPDATES": "ACTUALITÉS",
+  Notifications: "Notifications",
+  "Recent demo activity for your escrow deals.": "Activité récente de vos offres séquestres démo.",
+  "Ready for a new deal?": "Prêt pour une nouvelle offre ?",
+  "Create a protected demo escrow.": "Créer une offre séquestre démo protégée.",
+  "Need help with this shipment?": "Besoin d'aide pour cette expédition ?",
+  "Email support@surepay.cm": "Écrire à support@surepay.cm",
+  "Three-way dispute mediation": "Médiation à trois",
+  "Safety guide": "Guide de sécurité"
+};
+
+function phraseFor(language, phrase) {
+  return language === "fr" ? (frenchPhrases[phrase] || phrase) : phrase;
+}
 
 const sampleDeals = [
   {
@@ -65,6 +201,16 @@ const initialState = {
   disputes: []
 };
 
+function readLocalValue(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch (error) {
+    console.error(`SurePay could not read ${key} from this device.`, error);
+    return fallback;
+  }
+}
+
 const StoreContext = createContext(null);
 
 function readStoredState() {
@@ -93,6 +239,19 @@ function readStoredState() {
 function StoreProvider({ children }) {
   const [state, setState] = useState(readStoredState);
   const [storageWarning, setStorageWarning] = useState(false);
+  const [preferences, setPreferences] = useState(() => {
+    const saved = readLocalValue(PREFERENCES_STORAGE_KEY, {}) || {};
+    return {
+      ...defaultPreferences,
+      ...saved,
+      theme: saved.theme === "dark" ? "dark" : "light",
+      language: saved.language === "fr" ? "fr" : "en"
+    };
+  });
+  const [user, setUserState] = useState(() => {
+    const saved = readLocalValue(USER_STORAGE_KEY, null);
+    return saved && typeof saved.name === "string" ? saved : null;
+  });
 
   useEffect(() => {
     try {
@@ -103,6 +262,30 @@ function StoreProvider({ children }) {
       setStorageWarning(true);
     }
   }, [state]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = preferences.theme;
+    document.documentElement.lang = preferences.language;
+    try {
+      localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+    } catch (error) {
+      console.error("SurePay could not save appearance preferences.", error);
+    }
+  }, [preferences]);
+
+  const updatePreferences = (updates) => setPreferences((current) => ({ ...current, ...updates }));
+
+  const setUser = (nextUser) => {
+    setUserState(nextUser);
+    try {
+      if (nextUser) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+      else localStorage.removeItem(USER_STORAGE_KEY);
+    } catch (error) {
+      console.error("SurePay could not save the demo profile.", error);
+    }
+  };
+
+  const resetDemoData = () => setState({ ...initialState, deals: sampleDeals, disputes: [] });
 
   const createDeal = (deal) => {
     if (deal.total > state.availableBalance) return { error: "Your available balance is not enough for this deal." };
@@ -200,7 +383,12 @@ function StoreProvider({ children }) {
     confirmDelivery,
     submitDispute,
     resolveDispute,
-    storageWarning
+    storageWarning,
+    preferences,
+    updatePreferences,
+    user,
+    setUser,
+    resetDemoData
   };
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -215,6 +403,21 @@ function formatXaf(amount) {
   return `${new Intl.NumberFormat("fr-FR").format(amount)} XAF`;
 }
 
+function textFor(language, key) {
+  return words[language]?.[key] || words.en[key] || key;
+}
+
+function statusLabel(status, language) {
+  const labels = {
+    "Funds Locked": textFor(language, "fundsLocked"),
+    "In Transit": textFor(language, "inTransit"),
+    Delivered: textFor(language, "delivered"),
+    "Dispute Under Review": textFor(language, "disputed"),
+    "Awaiting Inspection": textFor(language, "awaitingInspection")
+  };
+  return labels[status] || status;
+}
+
 function lockedBalance(deals) {
   return deals
     .filter((deal) => deal.status !== "Delivered")
@@ -223,6 +426,9 @@ function lockedBalance(deals) {
 
 function Header() {
   const { pathname } = useLocation();
+  const { preferences, user } = useStore();
+  const t = (key) => textFor(preferences.language, key);
+  const initials = (user?.name || defaultUser.name).split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
   return (
     <header className="topbar app-topbar">
@@ -230,63 +436,89 @@ function Header() {
         <span className="brand-mark" aria-hidden="true">S</span>
         <span className="brand-copy">
           <strong>SurePay</strong>
-          <small>{pathname === "/" ? "HOME DASHBOARD" : "SAFE LOCAL ESCROW"}</small>
+          <small>{pathname === "/" ? t("dashboard").toUpperCase() : t("safeEscrow").toUpperCase()}</small>
         </span>
       </Link>
       <div className="topbar-actions">
-        <Link className="icon-button help-icon-button" to="/help" aria-label="Help and Support">?</Link>
+        <Link className="icon-button help-icon-button" to="/help" aria-label={t("support")}>?</Link>
         <Link className="icon-button notification-button" to="/notifications" aria-label="Notifications">
           <span aria-hidden="true">♧</span>
           <i aria-hidden="true" />
         </Link>
-        <Link className="profile-avatar" to="/profile" aria-label="Login and sign up">EM</Link>
+        <Link className="profile-avatar" to="/settings" aria-label={t("settings")}>{initials}</Link>
       </div>
     </header>
   );
 }
 
 function BottomNav() {
-  const { state } = useStore();
+  const { preferences } = useStore();
   const location = useLocation();
-  const activeDeal = state.deals.find((deal) => deal.status !== "Delivered");
-  const onHome = location.pathname === "/" && !location.hash;
+  const t = (key) => textFor(preferences.language, key);
+  const onHome = location.pathname === "/";
+  const onDeals = location.pathname === "/deals" || location.pathname.startsWith("/tracker/");
+  const onCreate = location.pathname === "/create";
+  const onSupport = location.pathname === "/help" || location.pathname.startsWith("/dispute/") || location.pathname.startsWith("/resolution/");
+  const onSettings = ["/settings", "/profile"].includes(location.pathname);
 
   return (
     <nav className="bottom-nav" aria-label="Main navigation">
       <Link to="/" className={`nav-item ${onHome ? "active" : ""}`} aria-current={onHome ? "page" : undefined}>
-        <span aria-hidden="true">▦</span>Home
+        <span aria-hidden="true">▦</span>{t("home")}
       </Link>
-      <Link to="/#deals" className={`nav-item ${location.hash === "#deals" ? "active" : ""}`} aria-current={location.hash === "#deals" ? "page" : undefined}>
-        <span aria-hidden="true">♢</span>Deals
+      <Link to="/deals" className={`nav-item ${onDeals ? "active" : ""}`} aria-current={onDeals ? "page" : undefined}>
+        <span aria-hidden="true">♢</span>{t("deals")}
       </Link>
-      <Link to={activeDeal ? `/tracker/${activeDeal.id}` : "/"} className={`nav-item ${location.pathname.startsWith("/tracker/") ? "active" : ""}`} aria-current={location.pathname.startsWith("/tracker/") ? "page" : undefined}>
-        <span aria-hidden="true">⇢</span>Track
+      <Link to="/create" className={`nav-item create-nav-item ${onCreate ? "active" : ""}`} aria-current={onCreate ? "page" : undefined} aria-label={t("create")}>
+        <span aria-hidden="true">＋</span>{t("create")}
       </Link>
-      <Link to="/profile" className={`nav-item ${["/profile", "/login", "/signup"].includes(location.pathname) ? "active" : ""}`} aria-current={["/profile", "/login", "/signup"].includes(location.pathname) ? "page" : undefined}>
-        <span aria-hidden="true">◉</span>Profile
+      <Link to="/help" className={`nav-item ${onSupport ? "active" : ""}`} aria-current={onSupport ? "page" : undefined}>
+        <span aria-hidden="true">?</span>{t("support")}
+      </Link>
+      <Link to="/settings" className={`nav-item ${onSettings ? "active" : ""}`} aria-current={onSettings ? "page" : undefined}>
+        <span aria-hidden="true">⚙</span>{t("settings")}
       </Link>
     </nav>
   );
 }
 
 function Help() {
+  const { state, preferences } = useStore();
+  const t = (key) => textFor(preferences.language, key);
+  const latestDeal = state.deals.find((deal) => deal.status !== "Delivered");
+
   return (
     <Shell>
-      <main className="page">
-        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Back to Home</Link>
+      <main className="page help-page">
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>{t("home")}</Link>
         <div className="page-title">
           <p className="eyebrow">SUREPAY SUPPORT</p>
-          <h1>How can we help?</h1>
-          <p>Find help with a protected purchase or contact our support team.</p>
+          <h1>{t("helpTitle")}</h1>
+          <p>{t("helpSubtitle")}</p>
         </div>
-        <section className="notice-card">
-          <strong>How escrow works</strong>
-          <p>Your payment stays protected while the seller ships your item. Confirm delivery after you receive and inspect it.</p>
+        <section className="settings-card safety-guide">
+          <div className="settings-section-title">
+            <span aria-hidden="true">♢</span>
+            <div><h2>{t("safetyGuide")}</h2><p>Keep every purchase protected from payment to delivery.</p></div>
+          </div>
+          <ol>
+            <li>Agree on the item, price, route, and inspection period before locking funds.</li>
+            <li>Verify the transport agency receipt and tracking details.</li>
+            <li>Confirm delivery only after receiving and inspecting the item.</li>
+          </ol>
+        </section>
+        <section className="mediation-card help-mediation">
+          <div><strong>Three-way dispute mediation</strong><p>Buyer, seller, and a SurePay mediator can review a demo case together.</p></div>
+          {latestDeal ? (
+            <Link className="button button-primary full-button" to={`/dispute/${latestDeal.id}#mediation`}>{t("mediation")}</Link>
+          ) : (
+            <Link className="button button-primary full-button" to="/deals">{t("deals")}</Link>
+          )}
         </section>
         <section className="notice-card">
           <strong>Need help with a transaction?</strong>
           <p>Include your SurePay deal ID so our team can help you faster.</p>
-          <a className="button button-primary full-button" href="mailto:support@surepay.cm">Email support@surepay.cm</a>
+          <a className="button button-secondary full-button" href="mailto:support@surepay.cm">support@surepay.cm</a>
         </section>
       </main>
     </Shell>
@@ -310,10 +542,12 @@ function Shell({ children }) {
 }
 
 function Home() {
-  const { state } = useStore();
+  const { state, preferences, user } = useStore();
   const navigate = useNavigate();
+  const t = (key) => textFor(preferences.language, key);
   const [filter, setFilter] = useState("all");
   const [walletMessage, setWalletMessage] = useState("");
+  const displayName = user?.name || defaultUser.name;
   const activeDeals = state.deals.filter((deal) => deal.status !== "Delivered");
   const transitDeals = activeDeals.filter((deal) => ["Funds Locked", "In Transit"].includes(deal.status));
   const actionDeals = activeDeals.filter((deal) => !["Funds Locked", "In Transit"].includes(deal.status));
@@ -331,32 +565,32 @@ function Home() {
       <main className="page home-page">
         <section className="welcome-row">
           <div className="welcome-copy">
-            <h1>Bonjour, Emmanuel <span aria-hidden="true">👋</span></h1>
+            <h1>{t("greeting")}, {displayName} <span aria-hidden="true">👋</span></h1>
             <p><span aria-hidden="true">⌖</span> Douala Commerce &amp; Logistics Hub</p>
           </div>
-          <span className="verified-pill"><span aria-hidden="true">✿</span> {state.trustScore}% Verified</span>
+          <span className="verified-pill"><span aria-hidden="true">✿</span> {state.trustScore}% {t("verifiedTrader")}</span>
         </section>
 
-        <section className="home-stats" aria-label="Trader summary">
-          <div><span>CNI STATUS</span><strong>♢ Level 2</strong></div>
-          <div><span>COMPLETED</span><strong>{state.completedDeals || 48} Deals</strong></div>
-          <div><span>DISPUTES</span><strong>{(state.disputes || []).filter((dispute) => dispute.status !== "Resolved").length} Active</strong></div>
+        <section className="home-stats" aria-label={t("verifiedTrader")}>
+          <div><span>{t("cniPlaceholder")}</span><strong>♢ {t("levelTwo")}</strong></div>
+          <div><span>{t("completedCount")}</span><strong>{state.completedDeals || 48} {t("deals")}</strong></div>
+          <div><span>{t("disputesCount")}</span><strong>{(state.disputes || []).filter((dispute) => dispute.status !== "Resolved").length} {t("noDisputes")}</strong></div>
         </section>
 
         <section className="balance-card home-balance-card" aria-label="Wallet balances">
           <div className="home-balance-heading">
-            <span>♙ IN ESCROW (PROTECTED)</span>
-            <strong>{activeDeals.length} Active Deals</strong>
+            <span>♙ {t("inEscrow").toUpperCase()} (PROTECTED)</span>
+            <strong>{activeDeals.length} {t("activeDeals")}</strong>
           </div>
           <div className="home-balance-amount">{formatXaf(lockedBalance(state.deals))}</div>
           <div className="home-balance-footer">
             <div>
-              <span>AVAILABLE BALANCE</span>
+              <span>{t("available").toUpperCase()}</span>
               <strong>{formatXaf(state.availableBalance)}</strong>
             </div>
             <div className="wallet-actions">
-              <button type="button" onClick={() => setWalletMessage("Demo only — no mobile-money top-up was made.")}>＋ Top Up</button>
-              <button type="button" onClick={() => setWalletMessage("Demo only — withdrawals are disabled.")}>▣ Withdraw</button>
+              <button type="button" onClick={() => setWalletMessage("Demo only — no mobile-money top-up was made.")}>＋ {t("topUp")}</button>
+              <button type="button" onClick={() => setWalletMessage("Demo only — withdrawals are disabled.")}>▣ {t("withdraw")}</button>
             </div>
           </div>
           {walletMessage && <p className="wallet-message" role="status">{walletMessage}</p>}
@@ -365,8 +599,8 @@ function Home() {
         <section className="quick-actions home-actions" aria-label="Escrow actions">
           <Link className="action-card primary-action" to="/create">
             <span className="action-icon" aria-hidden="true">♢</span>
-            <strong>＋ New Escrow</strong>
-            <small>Lock buyer funds safely</small>
+            <strong>＋ {t("createDeal")}</strong>
+            <small>{t("createProtected")}</small>
           </Link>
           <button
             className="action-card"
@@ -375,15 +609,15 @@ function Home() {
             onClick={() => trackedDeal && navigate(`/tracker/${trackedDeal.id}`)}
           >
             <span className="action-icon delivery-icon" aria-hidden="true">▣</span>
-            <strong>Track delivery</strong>
-            <small>{trackedDeal ? "Scan waybill / SMS code" : "Create a deal to get started"}</small>
+            <strong>{t("trackDelivery")}</strong>
+            <small>{trackedDeal ? (preferences.language === "fr" ? "Scannez le bordereau / code SMS" : "Scan waybill / SMS code") : t("noDeals")}</small>
           </button>
         </section>
 
         <section className="trusted-hub">
           <div className="hub-heading">
-            <span>TRUSTED HUB DIRECT</span>
-            <span>Douala - Yaounde Axis</span>
+            <span>{t("trustedHub")}</span>
+            <span>{t("dealsAxis")}</span>
           </div>
           <div className="hub-cards">
             <button type="button" onClick={() => navigate("/create")} className="hub-card" aria-label="Start an escrow with Mama Tcho Fabrics">
@@ -400,23 +634,21 @@ function Home() {
         <section className="deals-section" id="deals">
           <div className="section-heading">
             <div>
-              <h2>Active Escrow Deals</h2>
+              <h2>{t("recentDeals")}</h2>
             </div>
-            <button type="button" className="history-link" onClick={() => setFilter(filter === "history" ? "all" : "history")}>
-              {filter === "history" ? "View Active Deals" : "View History"}
-            </button>
+            <Link to="/deals" className="history-link">{t("viewAllDeals")}</Link>
           </div>
-          <div className="deal-filters" role="group" aria-label="Filter escrow deals">
-            <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>All ({activeDeals.length})</button>
-            <button type="button" aria-pressed={filter === "transit"} onClick={() => setFilter("transit")}>In Transit ({transitDeals.length})</button>
-            <button type="button" aria-pressed={filter === "action"} onClick={() => setFilter("action")}>Action Required ({actionDeals.length})</button>
+          <div className="deal-filters" role="group" aria-label={t("recentDeals")}>
+            <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>{t("allDeals")} ({activeDeals.length})</button>
+            <button type="button" aria-pressed={filter === "transit"} onClick={() => setFilter("transit")}>{t("inTransitStatus")} ({transitDeals.length})</button>
+            <button type="button" aria-pressed={filter === "action"} onClick={() => setFilter("action")}>{t("actionRequired")} ({actionDeals.length})</button>
           </div>
           {visibleDeals.length === 0 ? (
             <div className="empty-state">
               <span aria-hidden="true">◇</span>
-              <strong>{filter === "history" ? "No completed deals yet" : "No deals yet"}</strong>
+              <strong>{t("noDeals")}</strong>
               <p>{filter === "history" ? "Completed demo receipts will appear here." : "Create a protected escrow to get started."}</p>
-              <Link className="button button-primary" to="/create">Create a deal</Link>
+              <Link className="button button-primary" to="/create">{t("createNew")}</Link>
             </div>
           ) : (
             <div className="home-deal-list">
@@ -436,10 +668,10 @@ function Home() {
                   </div>
                   <div className="home-deal-footer">
                     <span className={`deal-state ${deal.status === "In Transit" ? "blue" : deal.status === "Awaiting Inspection" ? "orange" : ""}`}>
-                      {deal.status === "Awaiting Inspection" ? "♧ Awaiting Inspection" : deal.status === "Dispute Under Review" ? "Dispute in review" : deal.status === "Delivered" ? "Delivered" : "♙ Funds Locked & Protected"}
+                      {statusLabel(deal.status, preferences.language)}
                     </span>
                     <Link to={`/tracker/${deal.id}`} className="deal-action">
-                      {deal.status === "Awaiting Inspection" ? "Release Code" : deal.status === "Delivered" ? "View Receipt" : "Inspect & Release"} ›
+                      {t("inspectRelease")} ›
                     </Link>
                   </div>
                 </article>
@@ -448,8 +680,8 @@ function Home() {
           )}
         </section>
         <aside className="framework-card">
-          <strong>♧ SUREPAY DEMO ESCROW</strong>
-          <p>Sample transactions only. This preview does not move real funds or provide a regulated settlement service.</p>
+          <strong>♧ {t("demoNotice")}</strong>
+          <p>{t("demoNoticeText")}</p>
           <div><span>▣ Demo ledger</span><b>Cameroon</b></div>
         </aside>
       </main>
@@ -457,77 +689,280 @@ function Home() {
   );
 }
 
-function Profile() {
-  const { pathname } = useLocation();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const isSignup = pathname === "/signup";
+function Deals() {
+  const { state, preferences } = useStore();
+  const t = (key) => textFor(preferences.language, key);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+  const activeDeals = state.deals.filter((deal) => deal.status !== "Delivered");
+  const statuses = [
+    { key: "all", label: t("all") },
+    { key: "Funds Locked", label: t("fundsLocked") },
+    { key: "In Transit", label: t("inTransit") },
+    { key: "Delivered", label: t("delivered") },
+    { key: "Disputed", label: t("disputed") }
+  ];
+  const visibleDeals = state.deals.filter((deal) => {
+    const matchesStatus = filter === "all" ||
+      (filter === "Disputed" && deal.status === "Dispute Under Review") ||
+      (filter === "In Transit" && ["In Transit", "Awaiting Inspection"].includes(deal.status)) ||
+      deal.status === filter;
+    const searchText = `${deal.title} ${deal.id} #${deal.id} ${deal.agency} ${deal.waybill || ""}`.toLowerCase();
+    return matchesStatus && searchText.includes(query.trim().toLowerCase());
+  });
+  const completedDeals = state.completedDeals + state.deals.filter((deal) => deal.status === "Delivered").length;
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setPassword("");
-    setMessage("Demo only: no account was created and no credentials were sent or saved.");
+  return (
+    <Shell>
+      <main className="page deals-page">
+        <div className="page-title">
+          <p className="eyebrow">SUREPAY LEDGER</p>
+          <h1>{t("dealsTitle")}</h1>
+          <p>{t("dealsSubtitle")}</p>
+        </div>
+        <section className="deals-metrics" aria-label={t("dealsTitle")}>
+          <div><span>{t("totalActive")}</span><strong>{activeDeals.length}</strong></div>
+          <div><span>{t("protectedTotal")}</span><strong>{formatXaf(lockedBalance(state.deals))}</strong></div>
+          <div><span>{t("completed")}</span><strong>{completedDeals}</strong></div>
+        </section>
+        <label className="deal-search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("searchDeals")}
+            aria-label={t("searchDeals")}
+          />
+        </label>
+        <div className="ledger-filters" role="group" aria-label={t("dealsTitle")}>
+          {statuses.map((status) => (
+            <button
+              type="button"
+              key={status.key}
+              aria-pressed={filter === status.key}
+              onClick={() => setFilter(status.key)}
+            >
+              {status.label}
+            </button>
+          ))}
+        </div>
+        {visibleDeals.length ? (
+          <div className="ledger-list">
+            {visibleDeals.map((deal) => (
+              <article className="ledger-card" key={deal.id}>
+                <div className="ledger-card-heading">
+                  <div>
+                    <p className="eyebrow">#{deal.id}</p>
+                    <h2>{deal.title}</h2>
+                  </div>
+                  <strong className="ledger-price">{formatXaf(deal.price)}</strong>
+                </div>
+                <div className="ledger-route">{deal.origin} <span aria-hidden="true">→</span> {deal.destination}</div>
+                <div className="ledger-badges">
+                  <span className="agency-badge">▣ {deal.agency}</span>
+                  <span className={`ledger-status status-${deal.status.toLowerCase().replaceAll(" ", "-")}`}>
+                    {statusLabel(deal.status, preferences.language)}
+                  </span>
+                </div>
+                {deal.receiptVerified && (
+                  <span className={`verification-badge ${deal.verificationMode === "demo" ? "demo" : ""}`}>
+                    ✓ {deal.verificationMode === "demo" ? "Receipt Verified · Demo" : "Gemini AI Verified"}
+                  </span>
+                )}
+                <Link className="button button-primary full-button ledger-tracker-link" to={`/tracker/${deal.id}`}>
+                  {t("openTracker")}
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <section className="ledger-empty">
+            <span aria-hidden="true">◇</span>
+            <h2>{t("emptyDeals")}</h2>
+            <p>{t("emptyDealsHint")}</p>
+            <Link to="/create" className="button button-primary full-button">{t("createNewDeal")}</Link>
+          </section>
+        )}
+      </main>
+    </Shell>
+  );
+}
+
+function Settings() {
+  const { preferences, updatePreferences, user, setUser, resetDemoData, state } = useStore();
+  const navigate = useNavigate();
+  const t = (key) => textFor(preferences.language, key);
+  const profile = user || defaultUser;
+  const [message, setMessage] = useState("");
+
+  const updatePreference = (key, value) => {
+    updatePreferences({ [key]: value });
+    setMessage(t("saved"));
+  };
+
+  const handleReset = () => {
+    resetDemoData();
+    setMessage(t("resetDone"));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    navigate("/login");
   };
 
   return (
     <Shell>
-      <main className="page">
-        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Back to Home</Link>
+      <main className="page settings-page">
         <div className="page-title">
-          <p className="eyebrow">YOUR SUREPAY PROFILE</p>
-          <h1>{isSignup ? "Create your demo profile" : "Welcome back"}</h1>
-          <p>Sign up or log in to explore the SurePay demo. No real account is needed.</p>
+          <p className="eyebrow">SUREPAY ACCOUNT</p>
+          <h1>{t("settingsTitle")}</h1>
+          <p>{preferences.language === "fr" ? "Gérez votre profil et vos préférences SurePay." : "Manage your SurePay profile and preferences."}</p>
         </div>
-        <div className="auth-tabs" role="tablist" aria-label="Demo profile">
-          <Link to="/login" role="tab" aria-selected={!isSignup}>Log in</Link>
-          <Link to="/signup" role="tab" aria-selected={isSignup}>Sign up</Link>
+        <section className="settings-profile">
+          <div className="settings-avatar">{profile.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</div>
+          <div className="settings-profile-copy">
+            <strong>{profile.name}</strong>
+            <span>{profile.phone || defaultUser.phone}</span>
+            <small>{profile.email || defaultUser.email}</small>
+          </div>
+          <span className="gold-verified">✦ {textFor(preferences.language, "verifiedTrader")} · {state.trustScore}%</span>
+        </section>
+        <section className="settings-card">
+          <div className="settings-section-title">
+            <span aria-hidden="true">◐</span>
+            <div><h2>{t("appearance")}</h2><p>{t("selectTheme")}</p></div>
+          </div>
+          <div className="settings-choice-row" role="group" aria-label={t("appearance")}>
+            {["light", "dark"].map((theme) => (
+              <button
+                type="button"
+                key={theme}
+                aria-pressed={preferences.theme === theme}
+                onClick={() => updatePreference("theme", theme)}
+              >
+                {theme === "light" ? "☀ " + t("lightMode") : "☾ " + t("darkMode")}
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="settings-card">
+          <div className="settings-section-title">
+            <span aria-hidden="true">文</span>
+            <div><h2>{t("language")}</h2><p>{t("chooseLanguage")}</p></div>
+          </div>
+          <div className="settings-choice-row" role="group" aria-label={t("language")}>
+            <button type="button" aria-pressed={preferences.language === "en"} onClick={() => updatePreference("language", "en")}>English</button>
+            <button type="button" aria-pressed={preferences.language === "fr"} onClick={() => updatePreference("language", "fr")}>Français</button>
+          </div>
+        </section>
+        <section className="settings-card">
+          <div className="settings-section-title">
+            <span aria-hidden="true">♢</span>
+            <div><h2>{t("security")}</h2><p>Demo-only preferences for this device.</p></div>
+          </div>
+          <label className="settings-toggle">
+            <span><strong>{t("biometric")}</strong><small>Use a local demo lock preference.</small></span>
+            <input type="checkbox" role="switch" checked={preferences.biometricLock} onChange={(event) => updatePreference("biometricLock", event.target.checked)} />
+          </label>
+          <label className="settings-toggle">
+            <span><strong>{t("sms")}</strong><small>MTN MoMo and Orange Money activity reminders.</small></span>
+            <input type="checkbox" role="switch" checked={preferences.smsAlerts} onChange={(event) => updatePreference("smsAlerts", event.target.checked)} />
+          </label>
+        </section>
+        {message && <p className="inline-message" role="status">{message}</p>}
+        <section className="settings-actions">
+          <button type="button" className="button button-secondary full-button" onClick={handleReset}>{t("resetDemo")}</button>
+          <button type="button" className="button button-danger full-button" onClick={handleLogout}>{t("logout")}</button>
+        </section>
+      </main>
+    </Shell>
+  );
+}
+
+function deriveDisplayName(email) {
+  const username = email.split("@")[0] || "Emmanuel";
+  const name = username.replace(/[._+-]+/g, " ").trim();
+  return name.replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Emmanuel";
+}
+
+function Auth() {
+  const { pathname } = useLocation();
+  const { setUser, preferences } = useStore();
+  const navigate = useNavigate();
+  const t = (key) => textFor(preferences.language, key);
+  const isRegister = pathname === "/register" || pathname === "/signup";
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const signIn = (nextUser) => {
+    setUser(nextUser);
+    navigate("/");
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    signIn({
+      name: name.trim() || deriveDisplayName(email),
+      phone: phone.trim() || defaultUser.phone,
+      email: email.trim()
+    });
+  };
+
+  return (
+    <Shell>
+      <main className="page auth-page">
+        <div className="auth-brand-card">
+          <span className="auth-brand-mark">S</span>
+          <span className="gold-verified">✦ SAFE DEMO ACCESS</span>
+          <h1>{isRegister ? t("register") : t("signIn")}</h1>
+          <p>{t("authNote")}</p>
+        </div>
+        <div className="auth-tabs" role="tablist" aria-label="SurePay demo access">
+          <Link to="/login" role="tab" aria-selected={!isRegister}>{t("signIn")}</Link>
+          <Link to="/register" role="tab" aria-selected={isRegister}>{t("register")}</Link>
         </div>
         <form className="form-card auth-card" onSubmit={handleSubmit}>
-          {isSignup && (
-            <label className="field">
-              <span>Full name</span>
-              <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" required />
-            </label>
+          {isRegister && (
+            <>
+              <label className="field"><span>{t("fullName")}</span><input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" required /></label>
+              <label className="field"><span>{t("phone")}</span><input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+237 6XX XXX XXX" autoComplete="tel" required /></label>
+            </>
           )}
-          <label className="field">
-            <span>Email address</span>
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={isSignup ? "new-password" : "current-password"} required />
-          </label>
-          <button type="submit" className="button button-primary full-button">{isSignup ? "Create demo profile" : "Log in to demo"}</button>
-          <p className="form-footnote">Demo mode only — credentials are not sent to a server or stored.</p>
-          {message && <p className="inline-message" role="status">{message}</p>}
+          <label className="field"><span>{t("email")}</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required /></label>
+          <label className="field"><span>{t("password")}</span><input type="password" minLength="1" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={isRegister ? "new-password" : "current-password"} required /></label>
+          <button type="submit" className="button button-primary full-button">{t("continue")}</button>
         </form>
-        <Link to="/help" className="support-text-link">Need help? Contact SurePay support</Link>
+        <button type="button" className="button button-gold full-button" onClick={() => signIn(defaultUser)}>{t("oneTap")}</button>
+        <p className="form-footnote auth-note">{t("authNote")}</p>
       </main>
     </Shell>
   );
 }
 
 function Notifications() {
-  const { state } = useStore();
+  const { state, preferences } = useStore();
   const navigate = useNavigate();
+  const t = (key) => textFor(preferences.language, key);
+  const tx = (value) => phraseFor(preferences.language, value);
   const latestDeal = state.deals.find((deal) => deal.status !== "Delivered");
 
   return (
     <Shell>
       <main className="page">
-        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Back to Home</Link>
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>{t("home")}</Link>
         <div className="page-title">
-          <p className="eyebrow">UPDATES</p>
-          <h1>Notifications</h1>
-          <p>Recent demo activity for your escrow deals.</p>
+          <p className="eyebrow">{tx("UPDATES")}</p>
+          <h1>{tx("Notifications")}</h1>
+          <p>{tx("Recent demo activity for your escrow deals.")}</p>
         </div>
         <div className="notification-list">
           {latestDeal ? (
             <button type="button" className="notification-card" onClick={() => navigate(`/tracker/${latestDeal.id}`)}>
               <span aria-hidden="true">▣</span>
-              <span><strong>Escrow update</strong><small>{latestDeal.title} · {latestDeal.status}</small></span>
+              <span><strong>{preferences.language === "fr" ? "Mise à jour séquestre" : "Escrow update"}</strong><small>{latestDeal.title} · {statusLabel(latestDeal.status, preferences.language)}</small></span>
               <b>›</b>
             </button>
           ) : (
@@ -535,7 +970,7 @@ function Notifications() {
           )}
           <Link to="/create" className="notification-card">
             <span aria-hidden="true">＋</span>
-            <span><strong>Ready for a new deal?</strong><small>Create a protected demo escrow.</small></span>
+            <span><strong>{tx("Ready for a new deal?")}</strong><small>{tx("Create a protected demo escrow.")}</small></span>
             <b>›</b>
           </Link>
         </div>
@@ -546,8 +981,9 @@ function Notifications() {
 
 function Dispute() {
   const { id } = useParams();
-  const { state, submitDispute, resolveDispute } = useStore();
+  const { state, submitDispute, resolveDispute, preferences } = useStore();
   const navigate = useNavigate();
+  const tx = (value) => phraseFor(preferences.language, value);
   const deal = state.deals.find((item) => item.id === id);
   const [reason, setReason] = useState("Damaged or wrong item received");
   const [statement, setStatement] = useState("");
@@ -592,21 +1028,21 @@ function Dispute() {
   return (
     <Shell>
       <main className="page dispute-page">
-        <Link to={`/tracker/${deal.id}`} className="back-link"><span aria-hidden="true">←</span>Back to deal</Link>
+        <Link to={`/tracker/${deal.id}`} className="back-link"><span aria-hidden="true">←</span>{preferences.language === "fr" ? "Retour à l'offre" : "Back to deal"}</Link>
         <div className="page-title">
-          <p className="eyebrow">DISPUTE &amp; MEDIATION</p>
-          <h1>Tell us what happened</h1>
-          <p>Your demo escrow is frozen while you record the issue. No funds move in this preview.</p>
+          <p className="eyebrow">{tx("DISPUTE & MEDIATION")}</p>
+          <h1>{tx("Tell us what happened")}</h1>
+          <p>{preferences.language === "fr" ? "Votre séquestre démo est gelé pendant le signalement. Aucun fonds ne bouge." : "Your demo escrow is frozen while you record the issue. No funds move in this preview."}</p>
         </div>
         <section className="dispute-summary">
-          <span className="status-chip">ESCROW FROZEN · DEMO</span>
+          <span className="status-chip">{tx("ESCROW FROZEN · DEMO")}</span>
           <strong>{formatXaf(deal.price)}</strong>
           <p>#{deal.id} · {deal.title}</p>
           <small>{deal.agency} · {deal.origin} to {deal.destination}</small>
         </section>
         <form className="form-card dispute-form" onSubmit={handleSubmit}>
           <fieldset className="field-group">
-            <legend>1 · Select dispute reason</legend>
+            <legend>{tx("1 · Select dispute reason")}</legend>
             {["Damaged or wrong item received", "Package missing at agency", "Waybill and item discrepancy", "Seller unresponsive / window breach"].map((item) => (
               <label className="choice-card" key={item}>
                 <input type="radio" name="reason" value={item} checked={reason === item} onChange={() => setReason(item)} />
@@ -615,7 +1051,7 @@ function Dispute() {
             ))}
           </fieldset>
           <label className="field">
-            <span>2 · Inspection statement</span>
+            <span>{tx("2 · Inspection statement")}</span>
             <textarea value={statement} onChange={(event) => setStatement(event.target.value)} rows="4" placeholder="Describe the issue and the condition of the package." required />
           </label>
           <label className="field">
@@ -624,7 +1060,7 @@ function Dispute() {
           </label>
           {evidence.length > 0 && <p className="file-list" role="status">{evidence.join(", ")}</p>}
           <fieldset className="field-group">
-            <legend>3 · Requested resolution</legend>
+            <legend>{tx("3 · Requested resolution")}</legend>
             {["Full refund", "Partial refund / repair discount", "Return parcel to seller"].map((item) => (
               <label className="choice-card compact" key={item}>
                 <input type="radio" name="resolution" value={item} checked={resolution === item} onChange={() => setResolution(item)} />
@@ -634,15 +1070,15 @@ function Dispute() {
           </fieldset>
           {error && <p className="form-error" role="alert">{error}</p>}
           <section className="mediation-card" id="mediation">
-            <div><strong>24/7 SurePay Mediation Desk</strong><p>Simulate a three-way chat with buyer, seller, and mediator.</p></div>
+            <div><strong>24/7 SurePay Mediation Desk</strong><p>{preferences.language === "fr" ? "Simulez une conversation entre l'acheteur, le vendeur et le médiateur." : "Simulate a three-way chat with buyer, seller, and mediator."}</p></div>
             <button type="button" className="button button-primary full-button" onClick={handleMediation}>
-              Open WhatsApp Mediation (Demo)
+              {tx("Open WhatsApp Mediation (Demo)")}
             </button>
             {message && <p className="inline-message" role="status">{message}</p>}
             {caseId && <Link className="button button-secondary full-button" to={`/resolution/${caseId}`}>View demo resolution receipt</Link>}
           </section>
           {!caseId && (
-            <button type="submit" className="button button-secondary full-button">Submit Dispute Without WhatsApp</button>
+            <button type="submit" className="button button-secondary full-button">{tx("Submit Dispute Without WhatsApp")}</button>
           )}
           <p className="form-footnote">Demo only — no WhatsApp message, refund, or mobile-money payout is sent.</p>
         </form>
@@ -653,7 +1089,8 @@ function Dispute() {
 
 function Resolution() {
   const { id } = useParams();
-  const { state, resolveDispute } = useStore();
+  const { state, resolveDispute, preferences } = useStore();
+  const tx = (value) => phraseFor(preferences.language, value);
   const [message, setMessage] = useState("");
   const dispute = (state.disputes || []).find((item) => item.id === id);
   const deal = state.deals.find((item) => item.id === (dispute ? dispute.dealId : id));
@@ -692,17 +1129,17 @@ function Resolution() {
   return (
     <Shell>
       <main className="page resolution-page">
-        <Link to="/" className="back-link"><span aria-hidden="true">←</span>Return to SurePay Home</Link>
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>{preferences.language === "fr" ? "Retour à SurePay" : "Return to SurePay Home"}</Link>
         <section className="certificate-card">
           <span className="certificate-mark" aria-hidden="true">✓</span>
-          <span className="certificate-kicker">DEMO RESOLUTION CERTIFICATE</span>
-          <h1>{isResolved ? "Dispute Settled" : "Resolution Preview"}</h1>
-          <p>Case #{caseId} · {isResolved ? "Simulated demo settlement" : "No payout has been made"}</p>
+          <span className="certificate-kicker">{tx("DEMO RESOLUTION CERTIFICATE")}</span>
+          <h1>{isResolved ? tx("Dispute Settled") : tx("Resolution Preview")}</h1>
+          <p>{preferences.language === "fr" ? `Dossier #${caseId} · ${isResolved ? "Règlement simulé" : "Aucun paiement effectué"}` : `Case #${caseId} · ${isResolved ? "Simulated demo settlement" : "No payout has been made"}`}</p>
           <div className="audit-hash"><span>DEMO CASE RECORD</span><strong>{deal.id}</strong></div>
         </section>
         {!isResolved && dispute && (
           <button type="button" className="button button-primary full-button" onClick={() => resolveDispute(dispute.id)}>
-            Simulate demo resolution
+            {preferences.language === "fr" ? "Simuler la résolution démo" : "Simulate demo resolution"}
           </button>
         )}
         <section className="payout-card">
@@ -720,8 +1157,8 @@ function Resolution() {
           {dispute?.evidence?.length > 0 && <small>Evidence names: {dispute.evidence.join(", ")}</small>}
         </section>
         <div className="resolution-actions">
-          <button type="button" className="button button-primary full-button" onClick={downloadReceipt}>↓ Download demo receipt</button>
-          <button type="button" className="button button-primary full-button" onClick={copyReceipt}>♧ Copy receipt text (WhatsApp demo)</button>
+          <button type="button" className="button button-primary full-button" onClick={downloadReceipt}>{tx("↓ Download demo receipt")}</button>
+          <button type="button" className="button button-primary full-button" onClick={copyReceipt}>{tx("♧ Copy receipt text (WhatsApp demo)")}</button>
           {message && <p className="inline-message" role="status">{message}</p>}
           <Link to="/" className="button button-secondary full-button">⌂ Return to SurePay Home</Link>
         </div>
@@ -731,8 +1168,10 @@ function Resolution() {
 }
 
 function CreateDeal() {
-  const { createDeal } = useStore();
+  const { createDeal, preferences } = useStore();
   const navigate = useNavigate();
+  const tx = (value) => phraseFor(preferences.language, value);
+  const t = (key) => textFor(preferences.language, key);
   const [form, setForm] = useState({
     title: "",
     price: "",
@@ -801,82 +1240,82 @@ function CreateDeal() {
   return (
     <Shell>
       <main className="page">
-        <Link to="/" className="back-link"><span aria-hidden="true">←</span> Dashboard</Link>
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>{t("home")}</Link>
         <div className="page-title">
-          <p className="eyebrow">BUY WITH CONFIDENCE</p>
-          <h1>Create an escrow deal</h1>
-          <p>Agree on the details. We’ll keep the payment safe until delivery.</p>
+          <p className="eyebrow">{tx("BUY WITH CONFIDENCE")}</p>
+          <h1>{tx("Create an escrow deal")}</h1>
+          <p>{tx("Agree on the details. We’ll keep the payment safe until delivery.")}</p>
         </div>
 
-        <section className="create-progress" aria-label="Deal setup progress">
-          <strong>1 · Deal Details</strong><span>2 · Payment</span><span>3 · Escrow Lock</span>
+        <section className="create-progress" aria-label={tx("Deal Details")}>
+          <strong>1 · {tx("Deal Details")}</strong><span>2 · {tx("Payment")}</span><span>3 · {tx("Escrow Lock")}</span>
           <div><i /></div>
         </section>
-        <div className="role-switch" role="group" aria-label="Your role">
-          <button type="button" aria-pressed={userRole === "buying"} onClick={() => setUserRole("buying")}>♙ I am Buying</button>
-          <button type="button" aria-pressed={userRole === "selling"} onClick={() => setUserRole("selling")}>▤ I am Selling</button>
+        <div className="role-switch" role="group" aria-label={tx("Your role")}>
+          <button type="button" aria-pressed={userRole === "buying"} onClick={() => setUserRole("buying")}>♙ {tx("I am Buying")}</button>
+          <button type="button" aria-pressed={userRole === "selling"} onClick={() => setUserRole("selling")}>▤ {tx("I am Selling")}</button>
         </div>
 
         <form className="form-card" onSubmit={handleSubmit}>
           <label className="field">
-            <span>Item title</span>
+            <span>{tx("Item title")}</span>
             <input name="title" value={form.title} onChange={update} placeholder="e.g. iPhone 13 Pro 128GB" minLength="2" maxLength="90" required />
           </label>
 
           <label className="field">
-            <span>Price in XAF</span>
+            <span>{tx("Price in XAF")}</span>
             <div className="input-with-suffix">
               <input name="price" type="number" inputMode="numeric" min="1" step="1" value={form.price} onChange={update} placeholder="250000" required />
               <span>XAF</span>
             </div>
           </label>
-          <div className="price-presets" aria-label="Suggested amounts">
+          <div className="price-presets" aria-label={tx("Suggested amounts")}>
             {[50000, 150000, 250000, 500000].map((amount) => (
               <button type="button" onClick={() => choosePrice(amount)} key={amount}>{new Intl.NumberFormat("fr-FR").format(amount)}</button>
             ))}
           </div>
 
           <fieldset className="field-group">
-            <legend>Mobile money details</legend>
+            <legend>{tx("Mobile money details")}</legend>
             <div className="field-row">
               <label className="field">
-                <span>Payment method</span>
+                <span>{tx("Payment method")}</span>
                 <select name="paymentMethod" value={form.paymentMethod} onChange={update}>
                   <option>MTN MoMo</option>
                   <option>Orange Money</option>
                 </select>
               </label>
               <label className="field">
-                <span>Mobile number</span>
+                <span>{tx("Mobile number")}</span>
                 <input name="phone" type="tel" inputMode="tel" value={form.phone} onChange={update} placeholder="+237 677 123 456" autoComplete="tel" required />
               </label>
             </div>
           </fieldset>
 
           <fieldset className="field-group">
-            <legend>Delivery route</legend>
+            <legend>{tx("Delivery route")}</legend>
             <div className="field-row">
               <label className="field">
-                <span>Origin city</span>
+                <span>{tx("Origin city")}</span>
                 <input name="origin" value={form.origin} onChange={update} placeholder="Bamenda" maxLength="60" required />
               </label>
               <label className="field">
-                <span>Destination city</span>
+                <span>{tx("Destination city")}</span>
                 <input name="destination" value={form.destination} onChange={update} placeholder="Douala" maxLength="60" required />
               </label>
             </div>
             <label className="field">
-              <span>Transport agency</span>
+              <span>{tx("Transport agency")}</span>
               <select name="agency" value={form.agency} onChange={update}>
                 {agencies.map((agency) => <option key={agency}>{agency}</option>)}
               </select>
             </label>
             <fieldset className="field-group">
-              <legend>Inspection period</legend>
+              <legend>{tx("Inspection period")}</legend>
               <div className="inspection-options">
                 {[6, 24, 48].map((hours) => (
                   <button type="button" key={hours} aria-pressed={inspectionHours === hours} onClick={() => setInspectionHours(hours)}>
-                    <strong>{hours} Hours</strong><small>{hours === 6 ? "Fast handover" : hours === 24 ? "Electronics" : "Testing &amp; care"}</small>
+                    <strong>{hours} Hours</strong><small>{tx(hours === 6 ? "Fast handover" : hours === 24 ? "Electronics" : "Testing & care")}</small>
                   </button>
                 ))}
               </div>
@@ -884,15 +1323,15 @@ function CreateDeal() {
           </fieldset>
 
           <section className="fee-summary" aria-live="polite">
-            <div><span>Item price</span><strong>{formatXaf(price)}</strong></div>
-            <div><span>SurePay protection fee (2%)</span><strong>{formatXaf(fee)}</strong></div>
-            <div className="summary-total"><span>Total to lock</span><strong>{formatXaf(total)}</strong></div>
+            <div><span>{tx("Item price")}</span><strong>{formatXaf(price)}</strong></div>
+            <div><span>{tx("SurePay protection fee (2%)")}</span><strong>{formatXaf(fee)}</strong></div>
+            <div className="summary-total"><span>{tx("Total to lock")}</span><strong>{formatXaf(total)}</strong></div>
             <p>Funds stay in the demo escrow ledger until you confirm delivery.</p>
           </section>
 
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="button button-primary full-button" type="submit" disabled={submitting}>
-            {submitting ? "Locking funds…" : `Lock funds safely · ${formatXaf(total)}`}
+            {submitting ? (preferences.language === "fr" ? "Blocage en cours…" : "Locking funds…") : `${tx("Lock funds safely")} · ${formatXaf(total)}`}
           </button>
           <p className="form-footnote">Demo wallet only — this prototype does not initiate a real mobile money payment.</p>
         </form>
@@ -901,18 +1340,19 @@ function CreateDeal() {
   );
 }
 
-function timelineSteps(deal) {
+function timelineSteps(deal, language) {
+  const tx = (value) => phraseFor(language, value);
   const transit = deal.receiptVerified || deal.status === "Delivered" || deal.status === "Awaiting Inspection";
   const delivered = deal.status === "Delivered";
   return [
-    { title: "Deal created", detail: `Deal #${deal.id}`, complete: true },
-    { title: "Funds locked", detail: `${formatXaf(deal.price)} held safely in escrow`, complete: true },
+    { title: tx("Deal created"), detail: `Deal #${deal.id}`, complete: true },
+    { title: tx("Funds locked"), detail: `${formatXaf(deal.price)} held safely in escrow`, complete: true },
     {
       title: deal.status === "Awaiting Inspection"
-        ? "Delivery arrived · Inspection"
+        ? (language === "fr" ? "Livraison reçue · Inspection" : "Delivery arrived · Inspection")
         : transit
-          ? "Receipt verified · In transit"
-          : "Agency dispatch",
+          ? tx("Receipt verified · In transit")
+          : tx("Agency dispatch"),
       detail: transit
         ? deal.status === "Awaiting Inspection"
           ? `Shipment from ${deal.agency} arrived at ${deal.destination}.`
@@ -922,8 +1362,10 @@ function timelineSteps(deal) {
       active: !transit
     },
     {
-      title: "Delivery confirmed",
-      detail: delivered ? "Funds released to the seller in this demo ledger." : "Confirm after the item arrives and you have inspected it.",
+      title: tx("Delivery confirmed"),
+      detail: delivered
+        ? (language === "fr" ? "Fonds remis au vendeur dans ce registre démo." : "Funds released to the seller in this demo ledger.")
+        : (language === "fr" ? "Confirmez après réception et inspection de l'article." : "Confirm after the item arrives and you have inspected it."),
       complete: delivered,
       active: transit && !delivered
     }
@@ -932,9 +1374,11 @@ function timelineSteps(deal) {
 
 function Tracker() {
   const { id } = useParams();
-  const { state, verifyReceipt, confirmDelivery } = useStore();
+  const { state, verifyReceipt, confirmDelivery, preferences } = useStore();
   const numericDeal = /^\d+$/.test(id) ? state.deals[Number(id) - 1] : null;
   const deal = state.deals.find((item) => item.id === id) || numericDeal;
+  const tx = (value) => phraseFor(preferences.language, value);
+  const t = (key) => textFor(preferences.language, key);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
@@ -993,19 +1437,19 @@ function Tracker() {
   return (
     <Shell>
       <main className="page tracker-page">
-        <Link to="/" className="back-link"><span aria-hidden="true">←</span> Dashboard</Link>
+        <Link to="/" className="back-link"><span aria-hidden="true">←</span>{t("home")}</Link>
         <section className="tracker-heading">
           <div className="tracker-heading-copy">
-            <p className="eyebrow">LIVE ESCROW TRACKER</p>
+            <p className="eyebrow">{tx("LIVE ESCROW TRACKER")}</p>
             <h1>{deal.title}</h1>
             <p>{deal.origin} <span aria-hidden="true">→</span> {deal.destination} · {deal.agency}</p>
           </div>
-          <span className={`status-chip prominent ${deal.status === "Delivered" ? "status-done" : ""}`}>{deal.status}</span>
+          <span className={`status-chip prominent ${deal.status === "Delivered" ? "status-done" : ""}`}>{statusLabel(deal.status, preferences.language)}</span>
         </section>
 
         <section className="tracker-summary">
           <div>
-            <span className="summary-label">Protected in escrow</span>
+            <span className="summary-label">{tx("Protected in escrow")}</span>
             <strong>{formatXaf(deal.price)}</strong>
             <small>2% fee · {formatXaf(deal.fee)}</small>
           </div>
@@ -1014,11 +1458,11 @@ function Tracker() {
 
         <section className="timeline-card">
           <div className="section-heading">
-            <div><p className="eyebrow">SHIPMENT UPDATES</p><h2>Deal timeline</h2></div>
-            <span className="timeline-counter">4 steps</span>
+            <div><p className="eyebrow">{tx("SHIPMENT UPDATES")}</p><h2>{tx("Deal timeline")}</h2></div>
+            <span className="timeline-counter">{preferences.language === "fr" ? "4 étapes" : "4 steps"}</span>
           </div>
           <ol className="timeline">
-            {timelineSteps(deal).map((step, index) => (
+            {timelineSteps(deal, preferences.language).map((step, index) => (
               <li className={`timeline-step ${step.complete ? "complete" : ""} ${step.active ? "active" : ""}`} key={step.title}>
                 <span className="timeline-marker" aria-hidden="true">{step.complete ? "✓" : index + 1}</span>
                 <div className="timeline-copy">
@@ -1046,10 +1490,10 @@ function Tracker() {
           <section className="upload-card">
             <div className="upload-heading">
               <span className="upload-icon" aria-hidden="true">▧</span>
-              <div><h2>Verify dispatch receipt</h2><p>Take a photo or choose an image of the agency waybill.</p></div>
+              <div><h2>{tx("Verify dispatch receipt")}</h2><p>{preferences.language === "fr" ? "Prenez une photo ou choisissez l'image du bordereau de l'agence." : "Take a photo or choose an image of the agency waybill."}</p></div>
             </div>
             <label className={`button button-secondary full-button upload-button ${uploading ? "is-disabled" : ""}`}>
-              {uploading ? "Checking receipt…" : "Upload dispatch receipt"}
+              {uploading ? (preferences.language === "fr" ? "Vérification…" : "Checking receipt…") : tx("Upload dispatch receipt")}
               <input type="file" accept="image/*" capture="environment" onChange={onReceiptSelected} disabled={uploading} />
             </label>
             {uploadError && <p className="form-error" role="alert">{uploadError}</p>}
@@ -1061,7 +1505,7 @@ function Tracker() {
         <section className="delivery-card">
           <div className="delivery-title">
             <span className="delivery-check" aria-hidden="true">✓</span>
-            <div><h2>Confirm delivery</h2><p>Release funds only after you’ve received and inspected the item.</p></div>
+            <div><h2>{tx("Confirm delivery")}</h2><p>{preferences.language === "fr" ? "Libérez les fonds après avoir reçu et inspecté l'article." : "Release funds only after you’ve received and inspected the item."}</p></div>
           </div>
           {deal.status !== "Delivered" ? (
             <>
@@ -1072,7 +1516,7 @@ function Tracker() {
                   disabled={!deal.receiptVerified}
                   onChange={(event) => setDeliveryConfirmed(event.target.checked)}
                 />
-                <span>I received the item and it matches our agreement.</span>
+                <span>{preferences.language === "fr" ? "J'ai reçu l'article et il correspond à notre accord." : "I received the item and it matches our agreement."}</span>
               </label>
               <button
                 type="button"
@@ -1080,9 +1524,9 @@ function Tracker() {
                 disabled={!deal.receiptVerified || !deliveryConfirmed}
                 onClick={handleDelivery}
               >
-                Confirm delivery &amp; release {formatXaf(deal.price)}
+                {tx("Confirm delivery")} · {formatXaf(deal.price)}
               </button>
-              {!deal.receiptVerified && <p className="form-footnote">Verify the agency dispatch receipt before confirming delivery.</p>}
+              {!deal.receiptVerified && <p className="form-footnote">{preferences.language === "fr" ? "Vérifiez le reçu d'expédition avant de confirmer la livraison." : "Verify the agency dispatch receipt before confirming delivery."}</p>}
             </>
           ) : (
             <p className="delivered-note">This deal is complete. Your trust score is now {state.trustScore}%.</p>
@@ -1090,8 +1534,8 @@ function Tracker() {
         </section>
 
         <section className="tracker-dispute-actions">
-          <p>Need help with this shipment?</p>
-          <Link to={`/dispute/${deal.id}`} className="button button-secondary full-button">Raise Dispute / Flag Issue</Link>
+          <p>{tx("Need help with this shipment?")}</p>
+          <Link to={`/dispute/${deal.id}`} className="button button-secondary full-button">{tx("Raise Dispute / Flag Issue")}</Link>
           <Link to={`/dispute/${deal.id}#mediation`} className="mediation-link">24/7 WhatsApp Mediation · Demo only</Link>
         </section>
 
@@ -1109,14 +1553,17 @@ function App() {
     <StoreProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/deals" element={<Deals />} />
         <Route path="/create" element={<CreateDeal />} />
         <Route path="/tracker/:id" element={<Tracker />} />
         <Route path="/dispute/:id" element={<Dispute />} />
         <Route path="/resolution/:id" element={<Resolution />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/login" element={<Profile />} />
-        <Route path="/signup" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Navigate to="/settings" replace />} />
+        <Route path="/login" element={<Auth />} />
+        <Route path="/register" element={<Auth />} />
+        <Route path="/signup" element={<Navigate to="/register" replace />} />
         <Route path="/help" element={<Help />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
